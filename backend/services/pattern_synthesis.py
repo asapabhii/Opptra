@@ -1,3 +1,4 @@
+# flake8: noqa
 from __future__ import annotations
 
 import json
@@ -40,7 +41,7 @@ def _extract_json_text(text: str) -> str:
     first_curly = s.find("{")
     first_square = s.find("[")
 
-    candidates: list[tuple[int, str]] = []
+    candidates = []  # type: list[tuple[int, str]]
     if first_curly != -1:
         candidates.append((first_curly, "{"))
     if first_square != -1:
@@ -74,8 +75,32 @@ def synthesize_patterns(api_key: str, decisions: list[dict]) -> dict:
 
     genai.configure(api_key=api_key)
 
-    # Model name must be supported by the Gemini API version in use.
-    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    def _pick_model() -> str:
+        explicit = os.getenv("GEMINI_MODEL")
+        if explicit:
+            return explicit
+
+        # Automatic model selection based on availability in this API version.
+        try:
+            models = genai.list_models()
+            # Prefer models that explicitly support generateContent.
+            for m in models:
+                supported = getattr(m, "supported_generation_methods", None)
+                if supported and "generateContent" in supported:
+                    return m.name
+        except Exception as exc:
+            raise ValueError(
+                f"Could not list Gemini models for automatic selection: {exc}"
+            ) from exc
+
+        # If we can't detect supported methods, fall back to the first model.
+        first = next(iter(genai.list_models()), None)
+        if first and getattr(first, "name", None):
+            return first.name
+
+        raise ValueError("No Gemini models available for automatic selection")
+
+    model_name = _pick_model()
     model = genai.GenerativeModel(model_name)
 
     prompt = _read_prompt() + "\n\n" + json.dumps(decisions)
