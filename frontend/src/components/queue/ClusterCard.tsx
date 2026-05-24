@@ -9,12 +9,14 @@ interface ClusterCardProps {
   cluster: Cluster;
   recommendations: Recommendation[];
   onSkuClick: (skuId: string) => void;
+  onDecisionApplied: () => void | Promise<void>;
 }
 
 export default function ClusterCard({
   cluster,
   recommendations,
   onSkuClick,
+  onDecisionApplied,
 }: ClusterCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -35,8 +37,7 @@ export default function ClusterCard({
         )
       );
 
-      // Refresh the page to show updated statuses
-      window.location.reload();
+      await onDecisionApplied();
     } catch (error) {
       console.error('Failed to approve all:', error);
       alert('Failed to approve all recommendations. Please try again.');
@@ -62,8 +63,7 @@ export default function ClusterCard({
         )
       );
 
-      // Refresh the page to show updated statuses
-      window.location.reload();
+      await onDecisionApplied();
     } catch (error) {
       console.error('Failed to snooze all:', error);
       alert('Failed to snooze all recommendations. Please try again.');
@@ -73,7 +73,7 @@ export default function ClusterCard({
   };
 
   return (
-    <div className="rounded-xl bg-bg-card p-5 shadow-soft">
+    <div className="rounded-xl bg-bg-card p-4 shadow-soft lg:p-5">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs uppercase tracking-wide text-text-muted">{cluster.action_type}</div>
@@ -81,18 +81,18 @@ export default function ClusterCard({
         </div>
         <button
           onClick={() => setExpanded((prev) => !prev)}
-          className="text-sm text-accent-blue"
+          className="rounded-md border border-bg-elevated px-3 py-1 text-xs font-semibold text-accent-blue"
         >
           {expanded ? 'Hide SKUs' : 'Review SKUs'}
         </button>
       </div>
       <p className="mt-2 text-sm text-text-muted">{cluster.headline}</p>
-      <div className="mt-4 flex gap-6 text-sm text-text-muted">
+      <div className="mt-4 grid gap-2 text-sm text-text-muted sm:grid-cols-3">
         <span>{cluster.sku_count} SKUs</span>
         <span>{cluster.combined_gmv_at_risk_inr.toFixed(0)} GMV at risk</span>
         <span>{cluster.combined_working_capital_inr.toFixed(0)} working capital</span>
       </div>
-      <div className="mt-4 flex gap-3">
+      <div className="mt-4 flex flex-wrap gap-3">
         <button 
           className="rounded-md bg-accent-blue px-4 py-2 text-xs font-semibold text-white disabled:bg-bg-elevated disabled:text-text-muted"
           onClick={handleApproveAll}
@@ -115,7 +115,7 @@ export default function ClusterCard({
         </button>
       </div>
       {expanded && (
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 max-h-[28rem] space-y-2 overflow-y-auto pr-1">
           {recommendations.map((rec) => (
             <SkuRow 
               key={rec.id} 

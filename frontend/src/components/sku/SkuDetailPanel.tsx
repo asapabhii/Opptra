@@ -17,14 +17,17 @@ export default function SkuDetailPanel({
   skuId,
   open,
   onClose,
+  onDecisionApplied,
 }: {
   skuId: string | null;
   open: boolean;
   onClose: () => void;
+  onDecisionApplied?: () => void | Promise<void>;
 }) {
   const [detail, setDetail] = useState<SkuDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open || !skuId) return;
@@ -57,20 +60,35 @@ export default function SkuDetailPanel({
         {recommendation && (
           <DecisionBar
             recommendation={recommendation}
+            disabled={submitting}
             onApprove={async () => {
-              await postDecision({
-                sku_id: recommendation.sku_id,
-                recommendation_id: recommendation.id,
-                decision: 'approved',
-              });
+              setSubmitting(true);
+              try {
+                await postDecision({
+                  sku_id: recommendation.sku_id,
+                  recommendation_id: recommendation.id,
+                  decision: 'approved',
+                });
+                await onDecisionApplied?.();
+                onClose();
+              } finally {
+                setSubmitting(false);
+              }
             }}
             onSnooze={async (hours) => {
-              await postDecision({
-                sku_id: recommendation.sku_id,
-                recommendation_id: recommendation.id,
-                decision: 'snoozed',
-                snooze_duration_hours: hours,
-              });
+              setSubmitting(true);
+              try {
+                await postDecision({
+                  sku_id: recommendation.sku_id,
+                  recommendation_id: recommendation.id,
+                  decision: 'snoozed',
+                  snooze_duration_hours: hours,
+                });
+                await onDecisionApplied?.();
+                onClose();
+              } finally {
+                setSubmitting(false);
+              }
             }}
             onOverride={() => setShowOverride(true)}
           />
@@ -82,17 +100,24 @@ export default function SkuDetailPanel({
           recommendation={recommendation}
           onClose={() => setShowOverride(false)}
           onSubmit={async (payload) => {
-            await postDecision({
-              sku_id: recommendation.sku_id,
-              recommendation_id: recommendation.id,
-              decision: 'overridden',
-              human_chosen_price: payload.human_price,
-              override_reason_category: payload.reason_category,
-              override_reason_free_text: payload.notes,
-              sku_context_summary: `${detail.sku.sku_name} DOC ${detail.signals.doc_current.toFixed(0)} days`,
-              ai_recommendation_summary: recommendation.reasoning,
-            });
-            setShowOverride(false);
+            setSubmitting(true);
+            try {
+              await postDecision({
+                sku_id: recommendation.sku_id,
+                recommendation_id: recommendation.id,
+                decision: 'overridden',
+                human_chosen_price: payload.human_price,
+                override_reason_category: payload.reason_category,
+                override_reason_free_text: payload.notes,
+                sku_context_summary: `${detail.sku.sku_name} DOC ${detail.signals.doc_current.toFixed(0)} days`,
+                ai_recommendation_summary: recommendation.reasoning,
+              });
+              await onDecisionApplied?.();
+              setShowOverride(false);
+              onClose();
+            } finally {
+              setSubmitting(false);
+            }
           }}
         />
       )}

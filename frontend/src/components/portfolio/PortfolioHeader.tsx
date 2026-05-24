@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getPortfolioSummary } from '../../lib/api';
+import { APP_STATE_CHANGED_EVENT, getPortfolioSummary } from '../../lib/api';
 import { formatInr } from '../../lib/formatters';
 import { PortfolioSummary } from '../../types';
 
@@ -20,7 +20,12 @@ export default function PortfolioHeader() {
   const [focus, setFocus] = useState<PortfolioFocus>('all');
 
   useEffect(() => {
-    getPortfolioSummary().then(setSummary).catch(() => setSummary(null));
+    const loadSummary = () => getPortfolioSummary().then(setSummary).catch(() => setSummary(null));
+    loadSummary();
+
+    const handleStateChange = () => loadSummary();
+    window.addEventListener(APP_STATE_CHANGED_EVENT, handleStateChange as EventListener);
+    return () => window.removeEventListener(APP_STATE_CHANGED_EVENT, handleStateChange as EventListener);
   }, []);
 
   const loading = !summary;
@@ -37,9 +42,9 @@ export default function PortfolioHeader() {
       : [];
 
   return (
-    <section className="px-8 pt-8">
-      <div className="rounded-xl bg-bg-card p-6 shadow-soft">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+    <section className="px-4 pt-4 lg:px-6 lg:pt-6">
+      <div className="rounded-xl bg-bg-card p-4 shadow-soft lg:p-6">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
           <MetricCard
             label="Buy Box Lost"
             value={summary ? `${summary.buy_box_lost_count} SKUs` : ''}

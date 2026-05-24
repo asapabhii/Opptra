@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getLatestRun, getRunStatus, runQueue } from '../../lib/api';
+import { APP_STATE_CHANGED_EVENT, getLatestRun, getRunStatus, runQueue } from '../../lib/api';
 import { Cluster, Recommendation, QueueRun } from '../../types';
 import QueueControls, { QueueFilterKey } from './QueueControls';
 import ClusterCard from './ClusterCard';
@@ -16,48 +16,55 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [status, setStatus] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState<QueueFilterKey>('all');
-
-  // ADD THIS
   const [loading, setLoading] = useState(false);
 
+  const refreshLatestRun = async () => {
+    try {
+      const latest = await getLatestRun();
+      setRun(latest.run);
+      setClusters(latest.clusters ?? []);
+      setRecommendations(latest.recommendations ?? []);
+    } catch (error) {
+      console.error('Failed to refresh queue state:', error);
+    }
+  };
+
   useEffect(() => {
-    getLatestRun()
-      .then((data) => {
-        setRun(data.run);
-        setClusters(data.clusters ?? []);
-        setRecommendations(data.recommendations ?? []);
-      })
-      .catch(() => null);
+    refreshLatestRun();
+  }, []);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      refreshLatestRun();
+    };
+
+    window.addEventListener(APP_STATE_CHANGED_EVENT, handleRefresh as EventListener);
+    return () => window.removeEventListener(APP_STATE_CHANGED_EVENT, handleRefresh as EventListener);
   }, []);
 
   const handleRun = async () => {
-
-    // PREVENT DOUBLE CLICKS
     if (loading) return;
 
     setLoading(true);
 
     try {
       const started = await runQueue();
+      setStatus({ status: 'running', skus_processed: 0, total_skus: 0, run_id: started.run_id });
 
-      const interval = setInterval(async () => {
-        const s = await getRunStatus(started.run_id);
+      const interval = window.setInterval(async () => {
+        try {
+          const s = await getRunStatus(started.run_id);
+          setStatus(s);
 
-        setStatus(s);
-
-        if (s.status === 'complete' || s.status === 'failed') {
-          clearInterval(interval);
-
-          const latest = await getLatestRun();
-
-          setRun(latest.run);
-          setClusters(latest.clusters ?? []);
-          setRecommendations(latest.recommendations ?? []);
-
-          setLoading(false);
+          if (s.status === 'complete' || s.status === 'failed') {
+            window.clearInterval(interval);
+            await refreshLatestRun();
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error('Failed to poll run status:', error);
         }
       }, 2000);
-
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -105,6 +112,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
         run={run}
         status={status}
         onRun={handleRun}
+        onRefresh={refreshLatestRun}
         loading={loading}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
@@ -118,6 +126,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
             cluster={cluster}
             recommendations={getClusterRecommendations(cluster)}
             onSkuClick={onSkuClick}
+            onDecisionApplied={refreshLatestRun}
           />
         ))}
 

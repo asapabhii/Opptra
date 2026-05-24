@@ -110,6 +110,37 @@ async def fetch_recommendation_by_id(db: aiosqlite.Connection, recommendation_id
     }
 
 
+async def fetch_decision_by_recommendation_id(
+    db: aiosqlite.Connection, recommendation_id: str
+) -> Optional[dict]:
+    cursor = await db.execute(
+        "SELECT id, sku_id, recommendation_id, decision, original_recommended_price, human_chosen_price, snooze_duration_hours, override_reason_category, override_reason_free_text, override_insight, decided_at, resurfaced_at, outcome_check_due_at, buy_box_recovered, velocity_delta, outcome_note FROM decisions WHERE recommendation_id=? ORDER BY decided_at DESC LIMIT 1",
+        (recommendation_id,),
+    )
+    row = await cursor.fetchone()
+    await cursor.close()
+    if not row:
+        return None
+    return {
+        "id": row[0],
+        "sku_id": row[1],
+        "recommendation_id": row[2],
+        "decision": row[3],
+        "original_recommended_price": row[4],
+        "human_chosen_price": row[5],
+        "snooze_duration_hours": row[6],
+        "override_reason_category": row[7],
+        "override_reason_free_text": row[8],
+        "override_insight": row[9],
+        "decided_at": row[10],
+        "resurfaced_at": row[11],
+        "outcome_check_due_at": row[12],
+        "buy_box_recovered": row[13],
+        "velocity_delta": row[14],
+        "outcome_note": row[15],
+    }
+
+
 async def update_recommendation_status(
     db: aiosqlite.Connection, recommendation_id: str, status: str
 ) -> None:

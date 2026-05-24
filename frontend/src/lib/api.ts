@@ -1,4 +1,10 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+export const APP_STATE_CHANGED_EVENT = 'opptra:state-changed';
+
+export function emitAppStateChanged(detail?: Record<string, unknown>) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(APP_STATE_CHANGED_EVENT, { detail }));
+}
 
 export async function getPortfolioSummary() {
   const res = await fetch(`${API_BASE}/api/portfolio/summary`);
@@ -37,7 +43,9 @@ export async function postDecision(payload: any) {
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error('Failed to post decision');
-  return res.json();
+  const data = await res.json();
+  emitAppStateChanged({ type: 'decision-posted', skuId: payload?.sku_id });
+  return data;
 }
 
 export async function getDecisionLog(params: Record<string, string> = {}) {

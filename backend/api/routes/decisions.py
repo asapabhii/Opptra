@@ -8,7 +8,13 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from api.dependencies import get_db
-from db.queries import fetch_decisions, fetch_recommendation_by_id, update_recommendation_status, insert_decision
+from db.queries import (
+    fetch_decision_by_recommendation_id,
+    fetch_decisions,
+    fetch_recommendation_by_id,
+    insert_decision,
+    update_recommendation_status,
+)
 from services.signal_engine import get_sku_by_id
 from services.override_insights import extract_override_insight
 
@@ -75,6 +81,9 @@ async def post_decision(payload: dict, background_tasks: BackgroundTasks):
         if not recommendation:
             raise HTTPException(status_code=404, detail="Recommendation not found")
         if recommendation["status"] != "pending":
+            existing = await fetch_decision_by_recommendation_id(db, payload["recommendation_id"])
+            if existing and existing["decision"] == payload["decision"]:
+                return existing
             raise HTTPException(status_code=409, detail="Recommendation already decided")
 
     snooze_duration = payload.get("snooze_duration_hours")

@@ -1,21 +1,36 @@
 'use client';
 
-import { useState } from 'react';
-import { getPortfolioSynthesis } from '../../lib/api';
+import { useEffect, useState } from 'react';
+import { APP_STATE_CHANGED_EVENT, getPortfolioSynthesis } from '../../lib/api';
 
 export default function PortfolioInsightsPanel() {
   const [insights, setInsights] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleGenerate = async () => {
+  const refresh = async () => {
     setLoading(true);
-    const data = await getPortfolioSynthesis();
-    setInsights(data);
-    setLoading(false);
+    try {
+      const data = await getPortfolioSynthesis();
+      setInsights(data);
+    } catch (error) {
+      console.error('Failed to generate portfolio insights:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleStateChange = () => refresh();
+    window.addEventListener(APP_STATE_CHANGED_EVENT, handleStateChange as EventListener);
+    return () => window.removeEventListener(APP_STATE_CHANGED_EVENT, handleStateChange as EventListener);
+  }, []);
+
+  const handleGenerate = async () => {
+    await refresh();
   };
 
   return (
-    <div className="mt-6 rounded-xl bg-bg-card p-4">
+    <div className="rounded-xl bg-bg-card p-4 shadow-soft">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Portfolio Insights</h3>
         <button
@@ -26,7 +41,7 @@ export default function PortfolioInsightsPanel() {
         </button>
       </div>
       {insights && (
-        <div className="mt-4 space-y-3 text-sm text-text-muted">
+        <div className="mt-4 grid gap-3 text-sm text-text-muted xl:grid-cols-2">
           {insights.patterns?.map((pattern: any) => (
             <div key={pattern.pattern_name} className="rounded-lg bg-bg-elevated p-3">
               <div className="text-text-primary font-semibold">{pattern.pattern_name}</div>

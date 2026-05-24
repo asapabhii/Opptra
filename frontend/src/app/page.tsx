@@ -20,7 +20,7 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-bg-base text-text-primary">
+    <main className="min-h-screen overflow-x-hidden bg-bg-base text-text-primary">
       <PortfolioHeader />
       <ActionQueue onSkuClick={handleSkuClick} />
       <SkuDetailPanel 

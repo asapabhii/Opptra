@@ -16,6 +16,7 @@ export default function QueueControls({
   run,
   status,
   onRun,
+  onRefresh,
   loading,
   activeFilter,
   onFilterChange,
@@ -24,6 +25,7 @@ export default function QueueControls({
   run: QueueRun | null;
   status: any;
   onRun: () => void;
+  onRefresh: () => void;
   loading: boolean;
   activeFilter: QueueFilterKey;
   onFilterChange: (filter: QueueFilterKey) => void;
@@ -33,7 +35,7 @@ export default function QueueControls({
   const isRunning = status?.status === 'running';
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-bg-card p-4 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-4 rounded-xl bg-bg-card p-4 shadow-soft xl:flex-row xl:items-center xl:justify-between">
       <div className="flex flex-wrap gap-2 text-sm text-text-muted">
         {(Object.keys(FILTER_LABELS) as QueueFilterKey[]).map((filter) => {
           const selected = activeFilter === filter;
@@ -54,10 +56,16 @@ export default function QueueControls({
           );
         })}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs text-text-muted">
           {lastAnalysed ? `Last analysed: ${new Date(lastAnalysed).toLocaleTimeString()}` : 'Not analysed yet'}
         </span>
+        <button
+          onClick={onRefresh}
+          className="rounded-md border border-bg-elevated px-4 py-2 text-sm font-semibold text-text-primary"
+        >
+          Refresh Queue
+        </button>
         <button
           onClick={onRun}
           disabled={loading}
