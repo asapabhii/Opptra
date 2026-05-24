@@ -57,6 +57,13 @@ export async function getDecisionLog(params: Record<string, string> = {}) {
 
 export async function getPortfolioSynthesis() {
   const res = await fetch(`${API_BASE}/api/portfolio/synthesis`, { method: 'POST' });
-  if (!res.ok) throw new Error('Failed to fetch portfolio synthesis');
+
+  if (!res.ok) {
+    // Surface backend error detail (e.g., 502 detail message) so we can debug
+    // why synthesis fails in production.
+    const text = await res.text().catch(() => '');
+    throw new Error(text ? `Failed to fetch portfolio synthesis: ${text}` : 'Failed to fetch portfolio synthesis');
+  }
+
   return res.json();
 }
