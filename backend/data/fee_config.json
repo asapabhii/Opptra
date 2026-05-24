@@ -1,0 +1,40 @@
+{
+  "marketplace_fees_pct": {
+    "amazon_india": {
+      "cookware": 0.09,
+      "kitchen_tools": 0.09,
+      "kitchen_appliances": 0.08,
+      "storage_organization": 0.09
+    }
+  },
+  "fba_fee_tiers_inr": [
+    {
+      "tier": "small",
+      "max_weight_kg": 0.5,
+      "fee": 65
+    },
+    {
+      "tier": "medium",
+      "max_weight_kg": 1.5,
+      "fee": 105
+    },
+    {
+      "tier": "large",
+      "max_weight_kg": 5.0,
+      "fee": 155
+    },
+    {
+      "tier": "xlarge",
+      "max_weight_kg": 999,
+      "fee": 220
+    }
+  ],
+  "returns_provision_pct": {
+    "cookware": 0.03,
+    "kitchen_tools": 0.03,
+    "kitchen_appliances": 0.04,
+    "storage_organization": 0.025
+  },
+  "storage_cost_per_unit_per_month_inr": 20,
+  "storage_accrual_threshold_days": 60
+}

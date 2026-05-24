@@ -1,0 +1,138 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { getLatestRun, getRunStatus, runQueue } from '../../lib/api';
+import { Cluster, Recommendation, QueueRun } from '../../types';
+import QueueControls, { QueueFilterKey } from './QueueControls';
+import ClusterCard from './ClusterCard';
+
+interface ActionQueueProps {
+  onSkuClick: (skuId: string) => void;
+}
+
+export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
+  const [run, setRun] = useState<QueueRun | null>(null);
+  const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [status, setStatus] = useState<any>(null);
+  const [activeFilter, setActiveFilter] = useState<QueueFilterKey>('all');
+
+  // ADD THIS
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getLatestRun()
+      .then((data) => {
+        setRun(data.run);
+        setClusters(data.clusters ?? []);
+        setRecommendations(data.recommendations ?? []);
+      })
+      .catch(() => null);
+  }, []);
+
+  const handleRun = async () => {
+
+    // PREVENT DOUBLE CLICKS
+    if (loading) return;
+
+    setLoading(true);
+
+    try {
+      const started = await runQueue();
+
+      const interval = setInterval(async () => {
+        const s = await getRunStatus(started.run_id);
+
+        setStatus(s);
+
+        if (s.status === 'complete' || s.status === 'failed') {
+          clearInterval(interval);
+
+          const latest = await getLatestRun();
+
+          setRun(latest.run);
+          setClusters(latest.clusters ?? []);
+          setRecommendations(latest.recommendations ?? []);
+
+          setLoading(false);
+        }
+      }, 2000);
+
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
+  };
+
+  const getClusterRecommendations = (cluster: Cluster) =>
+    recommendations.filter((rec) => cluster.sku_ids.includes(rec.sku_id));
+
+  const isBuyBoxLostCluster = (cluster: Cluster) =>
+    ['grey_market_flooding', 'authorized_competitor_direct', 'map_violation_escalation', 'bleeding_margin_clearance'].includes(
+      cluster.root_cause
+    );
+
+  const isBloatedStaleCluster = (cluster: Cluster) =>
+    ['critical_doc_clearance', 'bloated_stale_reduction'].includes(cluster.root_cause);
+
+  const isStockoutRiskCluster = (cluster: Cluster) => cluster.root_cause === 'phantom_stockout_reorder';
+
+  const isEscalateCluster = (cluster: Cluster) => cluster.root_cause === 'mixed_escalation';
+
+  const clusterMatchesFilter = (cluster: Cluster) => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'buy_box_lost') return isBuyBoxLostCluster(cluster);
+    if (activeFilter === 'bloated_stale') return isBloatedStaleCluster(cluster);
+    if (activeFilter === 'stockout_risk') return isStockoutRiskCluster(cluster);
+    if (activeFilter === 'escalate') return isEscalateCluster(cluster);
+
+    return true;
+  };
+
+  const visibleClusters = clusters.filter(clusterMatchesFilter);
+
+  const filterCounts: Record<QueueFilterKey, number> = {
+    all: clusters.length,
+    buy_box_lost: clusters.filter(isBuyBoxLostCluster).length,
+    bloated_stale: clusters.filter(isBloatedStaleCluster).length,
+    stockout_risk: clusters.filter(isStockoutRiskCluster).length,
+    escalate: clusters.filter(isEscalateCluster).length,
+  };
+
+  return (
+    <section className="px-8 py-6">
+      <QueueControls
+        run={run}
+        status={status}
+        onRun={handleRun}
+        loading={loading}
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        filterCounts={filterCounts}
+      />
+
+      <div className="mt-4 space-y-4">
+        {visibleClusters.map((cluster) => (
+          <ClusterCard
+            key={cluster.id}
+            cluster={cluster}
+            recommendations={getClusterRecommendations(cluster)}
+            onSkuClick={onSkuClick}
+          />
+        ))}
+
+        {!clusters.length && (
+          <div className="rounded-xl border border-bg-elevated bg-bg-card p-8 text-center text-text-muted">
+            No analysis has been run yet. Click "Run AI Analysis" to begin.
+          </div>
+        )}
+
+        {clusters.length > 0 && !visibleClusters.length && (
+          <div className="rounded-xl border border-bg-elevated bg-bg-card p-8 text-center text-text-muted">
+            No clusters match the current filter.
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+*.log
+backend/data/*.db
+backend/backend/data/
+backend/data/*.db-journal
+backend/data/*.db-shm
+backend/data/*.db-wal
+node_modules/
+frontend/.next/
+frontend/out/
+.DS_Store

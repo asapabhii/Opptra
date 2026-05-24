@@ -1,0 +1,318 @@
+[
+  {
+    "sku_id": "CV-FP-28-BLK",
+    "buy_box_winner": {
+      "seller_id": "A3XK8P2M1N5Q7R",
+      "seller_name": "QuickDeal Electronics",
+      "price": 1179,
+      "listing_age_days": 4,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "QuickDeal Electronics", "price": 1179, "fulfillment_type": "seller_fulfilled"},
+      {"seller_name": "HomeKart Essentials", "price": 1259, "fulfillment_type": "FBA"}
+    ],
+    "competitor_price_age_hours": 2
+  },
+  {
+    "sku_id": "CV-WK-32-RED",
+    "buy_box_winner": {
+      "seller_id": "A7MQ3RN1KP5L9X",
+      "seller_name": "BazaarBuddy",
+      "price": 1749,
+      "listing_age_days": 6,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "BazaarBuddy", "price": 1749, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 1
+  },
+  {
+    "sku_id": "CV-KS-6PC-SLV",
+    "buy_box_winner": {
+      "seller_id": "AUNKNOWN001",
+      "seller_name": "KitchenPlus Store",
+      "price": 2299,
+      "listing_age_days": 3,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "unknown"
+    },
+    "all_competitors": [
+      {"seller_name": "KitchenPlus Store", "price": 2299, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 3
+  },
+  {
+    "sku_id": "CV-FP-24-RED",
+    "buy_box_winner": {
+      "seller_id": "A3XK8P2M1N5Q7R",
+      "seller_name": "QuickDeal Electronics",
+      "price": 929,
+      "listing_age_days": 2,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "QuickDeal Electronics", "price": 929, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 1
+  },
+  {
+    "sku_id": "CV-CB-BAMB-L",
+    "buy_box_winner": {
+      "seller_id": "A7MQ3RN1KP5L9X",
+      "seller_name": "BazaarBuddy",
+      "price": 799,
+      "listing_age_days": 8,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "BazaarBuddy", "price": 799, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 2
+  },
+  {
+    "sku_id": "CV-US-12PC-BLK",
+    "buy_box_winner": {
+      "seller_id": "A4PQRS7MN2L1XY",
+      "seller_name": "HomeKart Essentials",
+      "price": 1349,
+      "listing_age_days": 45,
+      "fulfillment_type": "FBA",
+      "seller_type_hint": "authorized"
+    },
+    "all_competitors": [
+      {"seller_name": "HomeKart Essentials", "price": 1349, "fulfillment_type": "FBA"}
+    ],
+    "competitor_price_age_hours": 4
+  },
+  {
+    "sku_id": "CV-FP-30-BLK",
+    "buy_box_winner": {
+      "seller_id": "A3XK8P2M1N5Q7R",
+      "seller_name": "QuickDeal Electronics",
+      "price": 1579,
+      "listing_age_days": 3,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "QuickDeal Electronics", "price": 1579, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 3
+  },
+  {
+    "sku_id": "CV-WK-28-BLK",
+    "buy_box_winner": {
+      "seller_id": "AUNKNOWN002",
+      "seller_name": "DealKart Online",
+      "price": 1499,
+      "listing_age_days": 5,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "unknown"
+    },
+    "all_competitors": [
+      {"seller_name": "DealKart Online", "price": 1499, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 5
+  },
+  {
+    "sku_id": "NC-AF-3L-WHT",
+    "buy_box_winner": {
+      "seller_id": "A3BNMK9LP2Q7RS",
+      "seller_name": "NovaCraft Direct",
+      "price": 5999,
+      "listing_age_days": 120,
+      "fulfillment_type": "FBA",
+      "seller_type_hint": "authorized"
+    },
+    "all_competitors": [
+      {"seller_name": "NovaCraft Direct", "price": 5999, "fulfillment_type": "FBA"}
+    ],
+    "competitor_price_age_hours": 2
+  },
+  {
+    "sku_id": "NC-EK-1.7L-BLK",
+    "buy_box_winner": {
+      "seller_id": "A3XK8P2M1N5Q7R",
+      "seller_name": "QuickDeal Electronics",
+      "price": 1999,
+      "listing_age_days": 5,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "QuickDeal Electronics", "price": 1999, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 1
+  },
+  {
+    "sku_id": "NC-VS-5PC-CLR",
+    "buy_box_winner": {
+      "seller_id": "A7MQ3RN1KP5L9X",
+      "seller_name": "BazaarBuddy",
+      "price": 3199,
+      "listing_age_days": 7,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "BazaarBuddy", "price": 3199, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 4
+  },
+  {
+    "sku_id": "NC-SO-6TC-WHT",
+    "buy_box_winner": {
+      "seller_id": "AUNKNOWN003",
+      "seller_name": "PriceShop India",
+      "price": 1849,
+      "listing_age_days": 6,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "unknown"
+    },
+    "all_competitors": [
+      {"seller_name": "PriceShop India", "price": 1849, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 6
+  },
+  {
+    "sku_id": "NC-AF-5L-BLK",
+    "buy_box_winner": {
+      "seller_id": "A4PQRS7MN2L1XY",
+      "seller_name": "HomeKart Essentials",
+      "price": 8799,
+      "listing_age_days": 30,
+      "fulfillment_type": "FBA",
+      "seller_type_hint": "authorized"
+    },
+    "all_competitors": [
+      {"seller_name": "HomeKart Essentials", "price": 8799, "fulfillment_type": "FBA"}
+    ],
+    "competitor_price_age_hours": 3
+  },
+  {
+    "sku_id": "NC-BL-1.5L-RED",
+    "buy_box_winner": null,
+    "all_competitors": [
+      {"seller_name": "Unknown Seller", "price": 3150, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 5,
+    "nearest_competitor_price": 3150,
+    "nearest_competitor_gap_pct": -0.045
+  },
+  {
+    "sku_id": "NC-SK-RACK-WHT",
+    "buy_box_winner": null,
+    "all_competitors": [
+      {"seller_name": "Unknown Seller", "price": 1449, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 4,
+    "nearest_competitor_price": 1449,
+    "nearest_competitor_gap_pct": -0.033
+  },
+  {
+    "sku_id": "NC-TO-4SL-WHT",
+    "buy_box_winner": null,
+    "all_competitors": [
+      {"seller_name": "Unknown Seller", "price": 2299, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 3,
+    "nearest_competitor_price": 2299,
+    "nearest_competitor_gap_pct": 0.045
+  },
+  {
+    "sku_id": "CV-KN-CHEF-BLK",
+    "buy_box_winner": {
+      "seller_id": "A7MQ3RN1KP5L9X",
+      "seller_name": "BazaarBuddy",
+      "price": 1099,
+      "listing_age_days": 9,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "BazaarBuddy", "price": 1099, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 2
+  },
+  {
+    "sku_id": "CV-SP-6PC-SET",
+    "buy_box_winner": {
+      "seller_id": "A3XK8P2M1N5Q7R",
+      "seller_name": "QuickDeal Electronics",
+      "price": 749,
+      "listing_age_days": 4,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "QuickDeal Electronics", "price": 749, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 1
+  },
+  {
+    "sku_id": "NC-CF-DRIP-BLK",
+    "buy_box_winner": {
+      "seller_id": "A7MQ3RN1KP5L9X",
+      "seller_name": "BazaarBuddy",
+      "price": 3499,
+      "listing_age_days": 14,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "BazaarBuddy", "price": 3499, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 5
+  },
+  {
+    "sku_id": "CV-CB-PLAS-SET",
+    "buy_box_winner": {
+      "seller_id": "A3XK8P2M1N5Q7R",
+      "seller_name": "QuickDeal Electronics",
+      "price": 549,
+      "listing_age_days": 3,
+      "fulfillment_type": "seller_fulfilled",
+      "seller_type_hint": "grey_market"
+    },
+    "all_competitors": [
+      {"seller_name": "QuickDeal Electronics", "price": 549, "fulfillment_type": "seller_fulfilled"}
+    ],
+    "competitor_price_age_hours": 2
+  },
+  {
+    "sku_id": "NC-KT-1.5L-BLK",
+    "buy_box_winner": null,
+    "all_competitors": [
+      {"seller_name": "HomeKart Essentials", "price": 1799, "fulfillment_type": "FBA"}
+    ],
+    "competitor_price_age_hours": 1,
+    "nearest_competitor_price": 1799,
+    "nearest_competitor_gap_pct": 0.0
+  },
+  {
+    "sku_id": "NC-KT-1L-WHT",
+    "buy_box_winner": null,
+    "all_competitors": [
+      {"seller_name": "HomeKart Essentials", "price": 1549, "fulfillment_type": "FBA"}
+    ],
+    "competitor_price_age_hours": 2,
+    "nearest_competitor_price": 1549,
+    "nearest_competitor_gap_pct": 0.033
+  },
+  {
+    "sku_id": "NC-CK-RACK-BLK",
+    "buy_box_winner": null,
+    "all_competitors": [
+      {"seller_name": "HomeKart Essentials", "price": 2399, "fulfillment_type": "FBA"}
+    ],
+    "competitor_price_age_hours": 3,
+    "nearest_competitor_price": 2399,
+    "nearest_competitor_gap_pct": 0.043
+  }
+]

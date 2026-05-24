@@ -1,0 +1,48 @@
+[
+  {
+    "seller_id": "A1ZDBOC32VH7BO",
+    "seller_name": "Amazon Retail India",
+    "status": "authorized",
+    "brands": [
+      "CasaVerde",
+      "NovaCraft"
+    ]
+  },
+  {
+    "seller_id": "A2FLDVNKM8P3XQ",
+    "seller_name": "CasaVerde Official Store",
+    "status": "authorized",
+    "brands": [
+      "CasaVerde"
+    ]
+  },
+  {
+    "seller_id": "A3BNMK9LP2Q7RS",
+    "seller_name": "NovaCraft Direct",
+    "status": "authorized",
+    "brands": [
+      "NovaCraft"
+    ]
+  },
+  {
+    "seller_id": "A4PQRS7MN2L1XY",
+    "seller_name": "HomeKart Essentials",
+    "status": "authorized",
+    "brands": [
+      "CasaVerde",
+      "NovaCraft"
+    ]
+  },
+  {
+    "seller_id": "A3XK8P2M1N5Q7R",
+    "seller_name": "QuickDeal Electronics",
+    "status": "grey_market",
+    "brands": []
+  },
+  {
+    "seller_id": "A7MQ3RN1KP5L9X",
+    "seller_name": "BazaarBuddy",
+    "status": "grey_market",
+    "brands": []
+  }
+]
