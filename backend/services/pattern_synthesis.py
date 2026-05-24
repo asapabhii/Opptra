@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -20,11 +21,6 @@ def _extract_json_text(text: str) -> str:
     Gemini often returns:
       - raw JSON
       - JSON wrapped in markdown fences
-        
-```json
-        ...
-        
-```
       - JSON with leading/trailing prose
 
     This tries hard to isolate the JSON payload.
@@ -36,18 +32,15 @@ def _extract_json_text(text: str) -> str:
 
     # Strip common markdown code fences
     if s.startswith("```"):
-        # Remove first fence line
         newline_idx = s.find("\n")
         s = s[newline_idx + 1 :] if newline_idx != -1 else ""
         if s.endswith("```"):
             s = s[: -len("```")].strip()
 
-    # If it looks like a JSON array/object within larger text, extract by
-    # delimiters.
     first_curly = s.find("{")
     first_square = s.find("[")
 
-    candidates = []  # type: list[tuple[int, str]]
+    candidates: list[tuple[int, str]] = []
     if first_curly != -1:
         candidates.append((first_curly, "{"))
     if first_square != -1:
@@ -80,7 +73,11 @@ def synthesize_patterns(api_key: str, decisions: list[dict]) -> dict:
         raise ValueError("decisions must be a list of objects")
 
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-pro")
+
+    # Model name must be supported by the Gemini API version in use.
+    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    model = genai.GenerativeModel(model_name)
+
     prompt = _read_prompt() + "\n\n" + json.dumps(decisions)
 
     response = model.generate_content(prompt)
