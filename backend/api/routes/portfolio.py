@@ -88,6 +88,17 @@ async def post_portfolio_synthesis():
         report = synthesize_patterns(api_key, decisions["decisions"])
     except ImportError as exc:
         raise HTTPException(status_code=503, detail="Gemini service unavailable") from exc
+    except ValueError as exc:
+        # Ensure JSON extraction/parsing issues don't become a raw 500.
+        raise HTTPException(
+            status_code=502,
+            detail=f"Portfolio synthesis failed to parse Gemini output: {exc}",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Portfolio synthesis failed: {exc}",
+        ) from exc
 
     report["id"] = f"syn-{uuid.uuid4().hex[:8]}"
     report["generated_at"] = datetime.now(timezone.utc).isoformat()
