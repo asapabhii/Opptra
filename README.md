@@ -63,30 +63,6 @@ Notes:
 - `XAI_API_KEY` powers the optional Grok fallback path.
 - `DATABASE_PATH` should point to persistent storage in production.
 
-## Docker
-
-Build and run the whole app as one container:
-
-```powershell
-docker build -t opptra-pricing-intelligence .
-docker run -p 8000:8000 --env-file .env opptra-pricing-intelligence
-```
-
-The backend serves the UI from the same host, so one public service is enough.
-
-## Deployment
-
-Recommended deployment setup:
-
-- Deploy as a single Docker web service.
-- Expose port `8000`.
-- Set the environment variables above in the host platform.
-- Attach persistent disk/storage for `/app/data` so the SQLite database survives restarts.
-
-Good fit platforms:
-- Render
-- Fly.io
-- Any Docker host that supports persistent volume mounts
 
 ## CI/CD
 
@@ -104,8 +80,3 @@ The workflow lives in `.github/workflows/ci.yml`.
 - `frontend/` Next.js UI
 - `docker-compose.yml` local single-service container setup
 - `Dockerfile` production build for the combined app
-
-## Notes
-
-- Do not commit `.env` or local database files.
-- The repository intentionally does not include a license file.
