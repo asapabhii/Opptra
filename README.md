@@ -1,4 +1,4 @@
-# Opptra — Pricing Intelligence (project overview)
+# Opptra — Pricing Intelligence
 
 Opptra is a compact pricing-intelligence prototype that combines rule-based logic, lightweight storage, and multiple large language models to generate, synthesize, and review per-SKU pricing recommendations.
 
