@@ -152,6 +152,8 @@ async def form_clusters(
 ) -> List[dict]:
     if not recommendations:
         return []
+    if not api_key and not openai_key and not xai_key:
+        raise ValueError("No live AI provider configured for cluster synthesis")
     if not api_key:
         if openai_key:
             try:
@@ -171,7 +173,7 @@ async def form_clusters(
                 return await _call_grok_clusters(grok_client, recommendations)
             except Exception:
                 pass
-        return _rule_based_clusters(recommendations)
+        raise ValueError("No live AI provider succeeded for cluster synthesis")
 
     client = AsyncAnthropic(api_key=api_key)
     system_prompt = _read_prompt()
@@ -207,4 +209,4 @@ async def form_clusters(
                 return await _call_grok_clusters(grok_client, recommendations)
             except Exception:
                 pass
-        return _rule_based_clusters(recommendations)
+            raise ValueError("No live AI provider succeeded for cluster synthesis")

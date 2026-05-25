@@ -33,10 +33,13 @@ export default function QueueControls({
 }) {
   const lastAnalysed = run?.completed_at ?? run?.triggered_at ?? null;
   const isRunning = status?.status === 'running';
+  const isFailed = status?.status === 'failed';
   const progressText = isRunning
     ? status?.total_skus > 0
       ? `Processing SKU ${status.skus_processed} of ${status.total_skus}`
       : 'Preparing analysis...'
+    : isFailed
+      ? 'Analysis failed'
     : lastAnalysed
       ? `Last analysed: ${new Date(lastAnalysed).toLocaleTimeString()}`
       : 'Not analysed yet';
@@ -51,6 +54,11 @@ export default function QueueControls({
           {isRunning && (
             <span className="rounded-full bg-accent-blue/15 px-3 py-1 text-xs font-semibold text-accent-blue">
               Live analysis
+            </span>
+          )}
+          {isFailed && (
+            <span className="rounded-full bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">
+              Check backend logs
             </span>
           )}
         </div>

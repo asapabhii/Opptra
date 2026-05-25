@@ -100,8 +100,11 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
           if (s.status === 'complete' || s.status === 'failed') {
             window.clearInterval(interval);
             await refreshLatestRun();
+            if (s.status === 'failed') {
+              setRunError((s as any).error || 'Queue analysis failed while running live AI.');
+            }
             setLoading(false);
-              setBootstrapping(false);
+            setBootstrapping(false);
           }
         } catch (error) {
           console.error('Failed to poll run status:', error);
@@ -109,7 +112,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
       }, 2000);
     } catch (err) {
       console.error(err);
-      setRunError('Could not start the queue analysis. Check the backend connection and try again.');
+      setRunError(err instanceof Error ? err.message : 'Could not start the queue analysis.');
       setLoading(false);
       setBootstrapping(false);
     }

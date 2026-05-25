@@ -11,7 +11,6 @@ from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 
 from models.recommendation import AiRecommendation
-from services.fallback_engine import build_fallback_recommendation
 from services.validation import (
     RetryWithCorrectionError,
     apply_business_rule_violations,
@@ -179,7 +178,7 @@ async def _run_single(
         except Exception:
             pass
 
-    return build_fallback_recommendation(payload)
+    raise RuntimeError("No live AI provider succeeded for this SKU")
 
 
 async def run_parallel(
@@ -206,9 +205,7 @@ async def run_parallel(
                     timeout=timeout_seconds,
                 )
             except asyncio.TimeoutError:
-                rec = build_fallback_recommendation(payload)
-            except Exception:
-                rec = build_fallback_recommendation(payload)
+                raise RuntimeError("Live AI request timed out")
             if progress_hook:
                 progress_hook(payload, rec)
             return rec
