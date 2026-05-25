@@ -44,7 +44,7 @@ def _build_user_message(
 
 
 def _provider_timeout_seconds() -> int:
-    return int(os.getenv("AI_PROVIDER_TIMEOUT_SECONDS", "45"))
+    return int(os.getenv("AI_PROVIDER_TIMEOUT_SECONDS", "25"))
 
 
 async def _call_claude(
@@ -213,63 +213,34 @@ async def _run_single(
     retry_count = 0
     correction: Optional[str] = None
     errors: list[str] = []
-
-    provider_tasks: list[tuple[str, asyncio.Task[AiRecommendation]]] = []
     timeout = _provider_timeout_seconds()
 
     if claude_key:
-        provider_tasks.append(
-            (
-                "anthropic",
-                asyncio.create_task(
-                    asyncio.wait_for(
-                        _invoke_claude(payload, claude_key, retry_count, correction),
-                        timeout=timeout,
-                    )
-                ),
+        try:
+            return await asyncio.wait_for(
+                _invoke_claude(payload, claude_key, retry_count, correction),
+                timeout=timeout,
             )
-        )
+        except Exception as exc:
+            errors.append(f"anthropic: {exc}")
+
     if openai_key:
-        provider_tasks.append(
-            (
-                "openai",
-                asyncio.create_task(
-                    asyncio.wait_for(
-                        _invoke_gpt(payload, openai_key, retry_count, correction),
-                        timeout=timeout,
-                    )
-                ),
+        try:
+            return await asyncio.wait_for(
+                _invoke_gpt(payload, openai_key, retry_count, correction),
+                timeout=timeout,
             )
-        )
+        except Exception as exc:
+            errors.append(f"openai: {exc}")
+
     if xai_key:
-        provider_tasks.append(
-            (
-                "grok",
-                asyncio.create_task(
-                    asyncio.wait_for(
-                        _invoke_grok(payload, xai_key, retry_count, correction),
-                        timeout=timeout,
-                    )
-                ),
+        try:
+            return await asyncio.wait_for(
+                _invoke_grok(payload, xai_key, retry_count, correction),
+                timeout=timeout,
             )
-        )
-
-    if not provider_tasks:
-        raise RuntimeError("No live AI provider is configured")
-
-    pending = {task for _, task in provider_tasks}
-    task_names = {task: name for name, task in provider_tasks}
-
-    while pending:
-        done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-        for task in done:
-            name = task_names[task]
-            try:
-                return task.result()
-            except RetryWithCorrectionError as exc:
-                errors.append(f"{name}: {exc.message}")
-            except Exception as exc:
-                errors.append(f"{name}: {exc}")
+        except Exception as exc:
+            errors.append(f"grok: {exc}")
 
     raise RuntimeError("No live AI provider succeeded for this SKU: " + " | ".join(errors))
 
@@ -281,6 +252,7 @@ async def run_parallel(
     xai_key: str | None = None,
     max_concurrency: int = 3,
     timeout_seconds: int = 60,
+    start_hook: Optional[Callable[[dict], None]] = None,
     progress_hook: Optional[Callable[[dict, AiRecommendation], None]] = None,
 ) -> List[AiRecommendation | None]:
     semaphore = asyncio.Semaphore(max_concurrency)
@@ -288,6 +260,8 @@ async def run_parallel(
     async def _guarded(payload: dict) -> AiRecommendation | None:
         async with semaphore:
             try:
+                if start_hook:
+                    start_hook(payload)
                 rec = await asyncio.wait_for(
                     _run_single(payload, claude_key, openai_key, xai_key),
                     timeout=timeout_seconds,

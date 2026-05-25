@@ -143,11 +143,18 @@ async def _process_queue_run(run_id: str) -> None:
             progress["current_sku_name"] = payload.get("sku_name")
             progress["skus_processed"] += 1
 
+        def start_hook(payload: dict) -> None:
+            progress = RUN_PROGRESS.get(run_id)
+            if not progress:
+                return
+            progress["current_sku_name"] = payload.get("sku_name")
+
         recommendations = await run_parallel(
             [payload.model_dump() for payload in payloads],
             os.getenv("ANTHROPIC_API_KEY"),
             os.getenv("OPENAI_API_KEY"),
             os.getenv("XAI_API_KEY"),
+            start_hook=start_hook,
             progress_hook=progress_hook,
         )
 
