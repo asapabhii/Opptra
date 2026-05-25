@@ -43,5 +43,5 @@ class AiRecommendation(BaseModel):
     reasoning: str = Field(min_length=10, max_length=300)
     flags: List[str]
     model_used: Optional[str] = None
-    source: Optional[Literal["ai_claude_sonnet", "ai_gpt4o_fallback", "rule_engine_fallback"]] = None
+    source: Optional[Literal["ai_claude_sonnet", "ai_gpt4o_fallback", "ai_grok_fallback", "rule_engine_fallback"]] = None
     generated_at: Optional[str] = None

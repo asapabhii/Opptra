@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -104,6 +105,10 @@ def _parse_clusters(raw: str) -> List[dict]:
     return parsed.get("clusters", [])
 
 
+def _cluster_timeout_seconds() -> int:
+    return int(os.getenv("AI_PROVIDER_TIMEOUT_SECONDS", "25"))
+
+
 async def _call_gpt_clusters(
     client: AsyncOpenAI,
     recommendations: List[dict],
@@ -154,59 +159,85 @@ async def form_clusters(
         return []
     if not api_key and not openai_key and not xai_key:
         raise ValueError("No live AI provider configured for cluster synthesis")
-    if not api_key:
-        if openai_key:
-            try:
-                gpt_client = AsyncOpenAI(api_key=openai_key)
-                return await _call_gpt_clusters(gpt_client, recommendations)
-            except Exception:
-                pass
-        if xai_key:
-            try:
-                grok_client = AsyncOpenAI(
-                    api_key=xai_key,
-                    base_url=os.getenv(
-                        "XAI_BASE_URL",
-                        "https://api.x.ai/v1",
-                    ),
-                )
-                return await _call_grok_clusters(grok_client, recommendations)
-            except Exception:
-                pass
+
+    timeout = _cluster_timeout_seconds()
+    tasks: list[tuple[str, asyncio.Task[List[dict]]]] = []
+
+    if api_key:
+        tasks.append(
+            (
+                "anthropic",
+                asyncio.create_task(
+                    asyncio.wait_for(
+                        _call_anthropic_clusters(api_key, recommendations),
+                        timeout=timeout,
+                    )
+                ),
+            )
+        )
+    if openai_key:
+        tasks.append(
+            (
+                "openai",
+                asyncio.create_task(
+                    asyncio.wait_for(
+                        _call_gpt_clusters(AsyncOpenAI(api_key=openai_key), recommendations),
+                        timeout=timeout,
+                    )
+                ),
+            )
+        )
+    if xai_key:
+        tasks.append(
+            (
+                "grok",
+                asyncio.create_task(
+                    asyncio.wait_for(
+                        _call_grok_clusters(
+                            AsyncOpenAI(
+                                api_key=xai_key,
+                                base_url=os.getenv(
+                                    "XAI_BASE_URL",
+                                    "https://api.x.ai/v1",
+                                ),
+                            ),
+                            recommendations,
+                        ),
+                        timeout=timeout,
+                    )
+                ),
+            )
+        )
+
+    if not tasks:
         raise ValueError("No live AI provider succeeded for cluster synthesis")
 
+    pending = {task for _, task in tasks}
+    names = {task: name for name, task in tasks}
+    errors: list[str] = []
+
+    while pending:
+        done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            provider_name = names[task]
+            try:
+                return task.result()
+            except Exception as exc:
+                errors.append(f"{provider_name}: {exc}")
+
+    raise ValueError("No live AI provider succeeded for cluster synthesis: " + " | ".join(errors))
+
+
+async def _call_anthropic_clusters(api_key: str, recommendations: List[dict]) -> List[dict]:
     client = AsyncAnthropic(api_key=api_key)
     system_prompt = _read_prompt()
     user_message = _cluster_prompt_content(recommendations)
-
-    try:
-        response = await client.messages.create(
-            model="claude-sonnet-4-20250514",
-            temperature=0,
-            max_tokens=1500,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-        )
-
-        raw = response.content[0].text
-        return _parse_clusters(raw)
-    except Exception:
-        if openai_key:
-            try:
-                gpt_client = AsyncOpenAI(api_key=openai_key)
-                return await _call_gpt_clusters(gpt_client, recommendations)
-            except Exception:
-                pass
-        if xai_key:
-            try:
-                grok_client = AsyncOpenAI(
-                    api_key=xai_key,
-                    base_url=os.getenv(
-                        "XAI_BASE_URL",
-                        "https://api.x.ai/v1",
-                    ),
-                )
-                return await _call_grok_clusters(grok_client, recommendations)
-            except Exception:
-                pass
-            raise ValueError("No live AI provider succeeded for cluster synthesis")
+    response = await client.messages.create(
+        model="claude-sonnet-4-20250514",
+        temperature=0,
+        max_tokens=1500,
+        system=system_prompt,
+        messages=[{"role": "user", "content": user_message}],
+    )
+    raw = response.content[0].text
+    return _parse_clusters(raw)
