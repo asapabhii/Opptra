@@ -19,6 +19,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
   const [loading, setLoading] = useState(false);
   const [autoRunPending, setAutoRunPending] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
 
   const refreshLatestRun = async () => {
     try {
@@ -85,6 +86,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
     if (loading) return;
 
     setLoading(true);
+    setRunError(null);
 
     try {
       const started = await runQueue();
@@ -107,6 +109,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
       }, 2000);
     } catch (err) {
       console.error(err);
+      setRunError('Could not start the queue analysis. Check the backend connection and try again.');
       setLoading(false);
       setBootstrapping(false);
     }
@@ -159,6 +162,12 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
         onFilterChange={setActiveFilter}
         filterCounts={filterCounts}
       />
+
+      {runError && (
+        <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
+          {runError}
+        </div>
+      )}
 
       <div className="mt-4 space-y-4">
         {visibleClusters.map((cluster) => (
