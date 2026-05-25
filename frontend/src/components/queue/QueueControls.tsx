@@ -33,9 +33,45 @@ export default function QueueControls({
 }) {
   const lastAnalysed = run?.completed_at ?? run?.triggered_at ?? null;
   const isRunning = status?.status === 'running';
+  const progressText = isRunning
+    ? status?.total_skus > 0
+      ? `Processing SKU ${status.skus_processed} of ${status.total_skus}`
+      : 'Preparing analysis...'
+    : lastAnalysed
+      ? `Last analysed: ${new Date(lastAnalysed).toLocaleTimeString()}`
+      : 'Not analysed yet';
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-bg-card p-4 shadow-soft xl:flex-row xl:items-center xl:justify-between">
+    <div className="flex flex-col gap-4 rounded-xl bg-bg-card p-4 shadow-soft">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
+          <span className="rounded-full border border-bg-elevated bg-bg-elevated px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text-muted">
+            {progressText}
+          </span>
+          {isRunning && (
+            <span className="rounded-full bg-accent-blue/15 px-3 py-1 text-xs font-semibold text-accent-blue">
+              Live analysis
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="rounded-md border border-bg-elevated px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-bg-elevated"
+          >
+            Refresh Queue
+          </button>
+          <button
+            type="button"
+            onClick={onRun}
+            disabled={loading}
+            className="rounded-md bg-accent-blue px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-blue/90 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {loading ? 'Analyzing...' : 'Run AI Analysis'}
+          </button>
+        </div>
+      </div>
       <div className="flex flex-wrap gap-2 text-sm text-text-muted">
         {(Object.keys(FILTER_LABELS) as QueueFilterKey[]).map((filter) => {
           const selected = activeFilter === filter;
@@ -56,31 +92,6 @@ export default function QueueControls({
           );
         })}
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs text-text-muted">
-          {lastAnalysed ? `Last analysed: ${new Date(lastAnalysed).toLocaleTimeString()}` : 'Not analysed yet'}
-        </span>
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="rounded-md border border-bg-elevated px-4 py-2 text-sm font-semibold text-text-primary"
-        >
-          Refresh Queue
-        </button>
-        <button
-          type="button"
-          onClick={onRun}
-          disabled={loading}
-          className="rounded-md bg-accent-blue px-4 py-2 text-sm font-semibold text-white"
-        >
-          {loading ? 'Running AI Analysis...' : 'Run AI Analysis'}
-        </button>
-      </div>
-      {isRunning && (
-        <div className="text-xs text-text-muted">
-          Processing SKU {status.skus_processed} of {status.total_skus}
-        </div>
-      )}
     </div>
   );
 }

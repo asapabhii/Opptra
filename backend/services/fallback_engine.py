@@ -33,6 +33,17 @@ def build_fallback_recommendation(payload: dict) -> AiRecommendation:
     if competitor is None:
         flags.append("no_competitor_data")
 
+    reasoning = _compose_reasoning(
+        payload=payload,
+        recommended_price=recommended_price,
+        computed_floor=computed_floor,
+        competitor=competitor,
+        competitor_price=competitor_price,
+        action_type=action_type,
+        map_price=map_price,
+        flags=flags,
+    )
+
     return AiRecommendation(
         recommended_price=recommended_price,
         action_type=action_type,
@@ -47,9 +58,53 @@ def build_fallback_recommendation(payload: dict) -> AiRecommendation:
         days_to_stockout_current=days_to_stockout_current,
         days_to_stockout_recommended=days_to_stockout_current,
         projected_velocity_change="unknown",
-        reasoning="Automated fallback - AI service unavailable. Verify manually before acting.",
+        reasoning=reasoning,
         flags=flags,
         model_used="rule_engine_fallback",
         source="rule_engine_fallback",
         generated_at=datetime.now(timezone.utc).isoformat(),
     )
+
+
+def _compose_reasoning(
+    payload: dict,
+    recommended_price: float,
+    computed_floor: float,
+    competitor: Optional[dict],
+    competitor_price: Optional[float],
+    action_type: str,
+    map_price: Optional[float],
+    flags: list[str],
+) -> str:
+    parts: list[str] = []
+
+    if action_type == "reduce_price":
+        parts.append(
+            f"Local demo analysis recommends reducing to ₹{recommended_price:,.0f}"
+            f" because the current price is above the floor of ₹{computed_floor:,.0f}."
+        )
+    else:
+        parts.append(
+            f"Local demo analysis recommends holding at ₹{recommended_price:,.0f}"
+            f" because the computed floor is already tight at ₹{computed_floor:,.0f}."
+        )
+
+    if map_price and map_price > recommended_price:
+        parts.append(f"MAP is enforced at ₹{map_price:,.0f}, so that acts as the ceiling.")
+
+    if competitor and competitor_price is not None:
+        parts.append(
+            f"The visible competitor is at ₹{competitor_price:,.0f}"
+            f" with seller type {competitor.get('seller_type_hint', 'unknown')}."
+        )
+    else:
+        parts.append("No reliable competitor data was available for this SKU.")
+
+    if payload.get("buy_box_status") == "lost":
+        parts.append("Buy box is currently lost, so price pressure is elevated.")
+
+    if "no_competitor_data" in flags:
+        parts.append("This recommendation is driven primarily by internal cost and velocity signals.")
+
+    text = " ".join(parts)
+    return text[:300]
