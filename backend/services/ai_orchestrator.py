@@ -189,10 +189,10 @@ async def run_parallel(
     max_concurrency: int = 3,
     timeout_seconds: int = 60,
     progress_hook: Optional[Callable[[dict, AiRecommendation], None]] = None,
-) -> List[AiRecommendation]:
+) -> List[AiRecommendation | None]:
     semaphore = asyncio.Semaphore(max_concurrency)
 
-    async def _guarded(payload: dict) -> AiRecommendation:
+    async def _guarded(payload: dict) -> AiRecommendation | None:
         async with semaphore:
             try:
                 rec = await asyncio.wait_for(
@@ -205,7 +205,9 @@ async def run_parallel(
                     timeout=timeout_seconds,
                 )
             except asyncio.TimeoutError:
-                raise RuntimeError("Live AI request timed out")
+                return None
+            except Exception:
+                return None
             if progress_hook:
                 progress_hook(payload, rec)
             return rec

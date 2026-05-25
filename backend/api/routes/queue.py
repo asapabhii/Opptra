@@ -146,8 +146,15 @@ async def _process_queue_run(run_id: str) -> None:
             progress_hook=progress_hook,
         )
 
+        successful_recommendations = [rec for rec in recommendations if rec is not None]
+        failed_count = len(recommendations) - len(successful_recommendations)
+        if not successful_recommendations:
+            raise RuntimeError("No live AI provider succeeded for any SKU")
+
         enriched_recommendations = []
         for sku, rec in zip(candidate_skus, recommendations):
+            if rec is None:
+                continue
             signals = signals_by_sku[sku["sku_id"]]
             enriched_recommendations.append(
                 {
@@ -188,6 +195,11 @@ async def _process_queue_run(run_id: str) -> None:
 
         RUN_PROGRESS[run_id]["status"] = "complete"
         RUN_PROGRESS[run_id]["current_sku_name"] = None
+        if failed_count:
+            RUN_PROGRESS[run_id]["warning"] = (
+                f"{failed_count} SKU(s) failed live AI and were skipped. "
+                "The rest completed normally."
+            )
     except Exception as exc:
         async with await get_db() as db:
             await update_queue_run_failed(db, run_id)
