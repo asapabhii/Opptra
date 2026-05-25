@@ -149,11 +149,6 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
 
   return (
     <section className="px-8 py-6">
-      {bootstrapping && (
-        <div className="mb-4 rounded-xl border border-accent-blue/30 bg-accent-blue/10 px-4 py-3 text-sm text-text-primary">
-          Launching live AI analysis now so you do not see the seeded fallback run.
-        </div>
-      )}
       <QueueControls
         run={run}
         status={status}

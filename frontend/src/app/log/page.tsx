@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DecisionLogTable from '../../components/log/DecisionLogTable';
 import LogFilters, { DecisionLogFilters } from '../../components/log/LogFilters';
 import PortfolioInsightsPanel from '../../components/log/PortfolioInsightsPanel';
+import { resetDemoState } from '../../lib/api';
 
 export default function LogPage() {
   const [filters, setFilters] = useState<DecisionLogFilters>({
@@ -13,6 +14,7 @@ export default function LogPage() {
     skuId: '',
     dateRange: '30',
   });
+  const [resetNonce, setResetNonce] = useState(0);
 
   return (
     <main className="min-h-screen bg-bg-base px-4 py-4 text-text-primary lg:px-6 lg:py-6">
@@ -30,9 +32,17 @@ export default function LogPage() {
           filters={filters}
           onChange={setFilters}
           onRefresh={() => setFilters((current) => ({ ...current }))}
-          onReset={() => setFilters({ brand: '', decisionType: '', skuId: '', dateRange: '30' })}
+          onReset={async () => {
+            try {
+              await resetDemoState();
+              setResetNonce((value) => value + 1);
+            } catch (error) {
+              console.error(error);
+              window.alert('Failed to reset the demo state.');
+            }
+          }}
         />
-        <DecisionLogTable filters={filters} />
+        <DecisionLogTable filters={filters} refreshToken={resetNonce} />
         <PortfolioInsightsPanel />
       </div>
     </main>

@@ -66,7 +66,7 @@ export default function LogFilters({
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={onReset} className="rounded-md border border-bg-elevated px-4 py-2 text-xs font-semibold text-text-primary">
-            Reset View
+            Reset Demo
           </button>
           <button type="button" onClick={onRefresh} className="rounded-md bg-accent-blue px-4 py-2 text-xs font-semibold text-white">
             Refresh Log

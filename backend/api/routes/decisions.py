@@ -15,6 +15,7 @@ from db.queries import (
     insert_decision,
     update_recommendation_status,
 )
+from db.init import reset_demo_state
 from services.signal_engine import get_sku_by_id
 from services.override_insights import extract_override_insight
 
@@ -59,6 +60,12 @@ async def get_decision_log(
     result["decisions"] = enriched
     result["total_count"] = len(enriched)
     return result
+
+
+@router.post("/reset-demo")
+async def reset_demo():
+    await reset_demo_state()
+    return {"status": "ok", "message": "Demo state reset to seeded decisions."}
 
 
 @router.post("")

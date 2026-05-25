@@ -6,7 +6,7 @@ import { Decision } from '../../types';
 import { formatRelativeDate } from '../../lib/formatters';
 import type { DecisionLogFilters } from './LogFilters';
 
-export default function DecisionLogTable({ filters }: { filters: DecisionLogFilters }) {
+export default function DecisionLogTable({ filters, refreshToken = 0 }: { filters: DecisionLogFilters; refreshToken?: number }) {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastLoadedAt, setLastLoadedAt] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export default function DecisionLogTable({ filters }: { filters: DecisionLogFilt
 
   useEffect(() => {
     refresh();
-  }, [query]);
+  }, [query, refreshToken]);
 
   useEffect(() => {
     const handleStateChange = () => refresh();

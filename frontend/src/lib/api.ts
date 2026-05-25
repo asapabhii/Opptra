@@ -60,6 +60,14 @@ export async function getDecisionLog(params: Record<string, string> = {}) {
   return res.json();
 }
 
+export async function resetDemoState() {
+  const res = await fetch(`${API_BASE}/api/decisions/reset-demo`, { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to reset demo state');
+  const data = await res.json();
+  emitAppStateChanged({ type: 'demo-reset' });
+  return data;
+}
+
 export async function getPortfolioSynthesis() {
   const res = await fetch(`${API_BASE}/api/portfolio/synthesis`, { method: 'POST' });
 

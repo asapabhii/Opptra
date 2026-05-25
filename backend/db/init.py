@@ -129,6 +129,25 @@ async def initialize_database() -> None:
         await _seed_if_needed(db)
 
 
+async def reset_demo_state() -> None:
+    db_path = _db_path()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute("PRAGMA foreign_keys=OFF")
+        for table in [
+            "decisions",
+            "action_clusters",
+            "sku_recommendations",
+            "portfolio_synthesis",
+            "queue_runs",
+        ]:
+            await db.execute(f"DELETE FROM {table}")
+        await db.commit()
+
+    await initialize_database()
+
+
 async def _ensure_sku_recommendation_source_constraint(db: aiosqlite.Connection) -> None:
     cursor = await db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='sku_recommendations'")
     row = await cursor.fetchone()
