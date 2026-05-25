@@ -20,6 +20,29 @@ from services.validation import (
     gate3_business_rules,
 )
 
+
+def _extract_json_from_text(text: str) -> dict | None:
+    """Try to extract the first JSON object from a text blob."""
+    import re
+
+    if not text:
+        return None
+    # look for the first {...} block
+    m = re.search(r"\{(?:[^{}]|(?R))*\}", text)
+    if not m:
+        # fallback: find the first '{' and the last '}'
+        start = text.find('{')
+        end = text.rfind('}')
+        if start == -1 or end == -1 or end <= start:
+            return None
+        snippet = text[start:end+1]
+    else:
+        snippet = m.group(0)
+    try:
+        return json.loads(snippet)
+    except Exception:
+        return None
+
 # runtime flags to skip providers for the current run if a permanent provider error is detected
 PROVIDER_SKIP: dict[str, bool] = {"anthropic": False, "openai": False, "xai": False}
 
@@ -152,9 +175,11 @@ async def _invoke_gpt(
     correction: Optional[str] = None,
 ) -> AiRecommendation:
     client = AsyncOpenAI(api_key=openai_key)
+    last_raw: Optional[str] = None
     for _ in range(3):
         try:
             raw = await _call_gpt4o(client, payload, correction)
+            last_raw = raw
             parsed = gate1_parse(raw, retry_count)
             rec = gate2_schema(parsed)
             violations = gate3_business_rules(payload, rec)
@@ -167,11 +192,36 @@ async def _invoke_gpt(
             correction = exc.message
             retry_count += 1
         except Exception as exc:
+            # store last_raw if available for salvage attempt
+            try:
+                last_raw = raw  # type: ignore
+            except Exception:
+                pass
             correction = (
                 "The previous attempt failed before producing a valid "
                 "recommendation. Return ONLY valid JSON matching the schema."
             )
             retry_count += 1
+
+    # final salvage attempt: try extracting JSON from the last raw response
+    if last_raw:
+        logging.warning("Attempting JSON salvage for OpenAI raw response for SKU %s", payload.get("sku_id"))
+        logging.debug("OpenAI raw (truncated): %s", (last_raw[:1000] if len(last_raw) > 1000 else last_raw))
+        extracted = _extract_json_from_text(last_raw)
+        if extracted:
+            try:
+                parsed = extracted
+                rec = gate2_schema(parsed)
+                violations = gate3_business_rules(payload, rec)
+                rec = apply_business_rule_violations(rec, violations)
+                rec.model_used = "gpt-4o"
+                rec.source = "ai_gpt4o_fallback"
+                rec.generated_at = datetime.now(timezone.utc).isoformat()
+                logging.warning("Salvaged OpenAI recommendation for SKU %s", payload.get("sku_id"))
+                return rec
+            except Exception:
+                logging.exception("OpenAI salvage attempt failed for SKU %s", payload.get("sku_id"))
+
     raise RuntimeError("OpenAI failed to return a valid recommendation")
 
 
@@ -185,9 +235,11 @@ async def _invoke_grok(
         api_key=xai_key,
         base_url=os.getenv("XAI_BASE_URL", "https://api.x.ai/v1"),
     )
+    last_raw: Optional[str] = None
     for _ in range(3):
         try:
             raw = await _call_grok(client, payload, correction)
+            last_raw = raw
             parsed = gate1_parse(raw, retry_count)
             rec = gate2_schema(parsed)
             violations = gate3_business_rules(payload, rec)
@@ -200,11 +252,34 @@ async def _invoke_grok(
             correction = exc.message
             retry_count += 1
         except Exception:
+            try:
+                last_raw = raw  # type: ignore
+            except Exception:
+                pass
             correction = (
                 "The previous attempt failed before producing a valid "
                 "recommendation. Return ONLY valid JSON matching the schema."
             )
             retry_count += 1
+
+    if last_raw:
+        logging.warning("Attempting JSON salvage for Grok raw response for SKU %s", payload.get("sku_id"))
+        logging.debug("Grok raw (truncated): %s", (last_raw[:1000] if len(last_raw) > 1000 else last_raw))
+        extracted = _extract_json_from_text(last_raw)
+        if extracted:
+            try:
+                parsed = extracted
+                rec = gate2_schema(parsed)
+                violations = gate3_business_rules(payload, rec)
+                rec = apply_business_rule_violations(rec, violations)
+                rec.model_used = os.getenv("XAI_MODEL", "grok-2-latest")
+                rec.source = "ai_grok_fallback"
+                rec.generated_at = datetime.now(timezone.utc).isoformat()
+                logging.warning("Salvaged Grok recommendation for SKU %s", payload.get("sku_id"))
+                return rec
+            except Exception:
+                logging.exception("Grok salvage attempt failed for SKU %s", payload.get("sku_id"))
+
     raise RuntimeError("Grok failed to return a valid recommendation")
 
 
