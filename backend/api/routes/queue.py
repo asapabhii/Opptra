@@ -9,6 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from api.dependencies import get_db
 from db.queries import (
     fetch_clusters_for_run,
+    fetch_queue_run_by_id,
     fetch_latest_run,
     fetch_recent_decisions_for_skus,
     fetch_recommendations_for_run,
@@ -77,15 +78,19 @@ async def get_queue_run_status(run_id: str):
         return RUN_PROGRESS[run_id]
 
     async with await get_db() as db:
-        latest = await fetch_latest_run(db)
+        run = await fetch_queue_run_by_id(db, run_id)
 
-    if latest and latest["id"] == run_id:
+    if run:
+        progress = RUN_PROGRESS.get(run_id, {})
         return {
             "run_id": run_id,
-            "status": latest["status"],
-            "skus_processed": latest["sku_count"] or 0,
-            "total_skus": latest["sku_count"] or 0,
-            "current_sku_name": None,
+            "status": run["status"],
+            "skus_processed": progress.get("skus_processed", 0 if run["status"] != "complete" else run["sku_count"] or 0),
+            "total_skus": run["sku_count"] or 0,
+            "current_sku_name": progress.get("current_sku_name"),
+            "started_at": progress.get("started_at", run["triggered_at"]),
+            "warning": progress.get("warning"),
+            "error": progress.get("error"),
         }
 
     raise HTTPException(status_code=404, detail=f"Queue run {run_id} not found")

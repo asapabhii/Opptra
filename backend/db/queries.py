@@ -26,6 +26,26 @@ async def fetch_latest_run(db: aiosqlite.Connection) -> Optional[dict]:
     }
 
 
+async def fetch_queue_run_by_id(db: aiosqlite.Connection, run_id: str) -> Optional[dict]:
+    cursor = await db.execute(
+        "SELECT id, triggered_at, status, sku_count, completed_at, cost_usd, prompt_version FROM queue_runs WHERE id=?",
+        (run_id,),
+    )
+    row = await cursor.fetchone()
+    await cursor.close()
+    if not row:
+        return None
+    return {
+        "id": row[0],
+        "triggered_at": row[1],
+        "status": row[2],
+        "sku_count": row[3],
+        "completed_at": row[4],
+        "cost_usd": row[5],
+        "prompt_version": row[6],
+    }
+
+
 async def insert_queue_run(db: aiosqlite.Connection, run_id: str, sku_count: int) -> None:
     await db.execute(
         "INSERT INTO queue_runs (id, triggered_at, status, sku_count) VALUES (?, ?, 'running', ?)",
