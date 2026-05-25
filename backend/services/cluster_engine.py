@@ -106,7 +106,7 @@ def _parse_clusters(raw: str) -> List[dict]:
 
 
 def _cluster_timeout_seconds() -> int:
-    return int(os.getenv("AI_PROVIDER_TIMEOUT_SECONDS", "25"))
+    return int(os.getenv("AI_PROVIDER_TIMEOUT_SECONDS", "45"))
 
 
 async def _call_gpt_clusters(
@@ -129,6 +129,18 @@ async def _call_gpt_clusters(
     return _parse_clusters(response.choices[0].message.content or "{}")
 
 
+async def _call_gpt_clusters_with_retry(
+    client: AsyncOpenAI,
+    recommendations: List[dict],
+) -> List[dict]:
+    for _ in range(3):
+        try:
+            return await _call_gpt_clusters(client, recommendations)
+        except Exception:
+            continue
+    raise RuntimeError("OpenAI failed to return valid clusters")
+
+
 async def _call_grok_clusters(
     client: AsyncOpenAI,
     recommendations: List[dict],
@@ -147,6 +159,18 @@ async def _call_grok_clusters(
         ],
     )
     return _parse_clusters(response.choices[0].message.content or "{}")
+
+
+async def _call_grok_clusters_with_retry(
+    client: AsyncOpenAI,
+    recommendations: List[dict],
+) -> List[dict]:
+    for _ in range(3):
+        try:
+            return await _call_grok_clusters(client, recommendations)
+        except Exception:
+            continue
+    raise RuntimeError("Grok failed to return valid clusters")
 
 
 async def form_clusters(
@@ -169,7 +193,7 @@ async def form_clusters(
                 "anthropic",
                 asyncio.create_task(
                     asyncio.wait_for(
-                        _call_anthropic_clusters(api_key, recommendations),
+                        _call_anthropic_clusters_with_retry(api_key, recommendations),
                         timeout=timeout,
                     )
                 ),
@@ -181,7 +205,7 @@ async def form_clusters(
                 "openai",
                 asyncio.create_task(
                     asyncio.wait_for(
-                        _call_gpt_clusters(AsyncOpenAI(api_key=openai_key), recommendations),
+                        _call_gpt_clusters_with_retry(AsyncOpenAI(api_key=openai_key), recommendations),
                         timeout=timeout,
                     )
                 ),
@@ -193,7 +217,7 @@ async def form_clusters(
                 "grok",
                 asyncio.create_task(
                     asyncio.wait_for(
-                        _call_grok_clusters(
+                        _call_grok_clusters_with_retry(
                             AsyncOpenAI(
                                 api_key=xai_key,
                                 base_url=os.getenv(
@@ -228,16 +252,21 @@ async def form_clusters(
     raise ValueError("No live AI provider succeeded for cluster synthesis: " + " | ".join(errors))
 
 
-async def _call_anthropic_clusters(api_key: str, recommendations: List[dict]) -> List[dict]:
+async def _call_anthropic_clusters_with_retry(api_key: str, recommendations: List[dict]) -> List[dict]:
     client = AsyncAnthropic(api_key=api_key)
     system_prompt = _read_prompt()
     user_message = _cluster_prompt_content(recommendations)
-    response = await client.messages.create(
-        model="claude-sonnet-4-20250514",
-        temperature=0,
-        max_tokens=1500,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_message}],
-    )
-    raw = response.content[0].text
-    return _parse_clusters(raw)
+    for _ in range(3):
+        try:
+            response = await client.messages.create(
+                model="claude-sonnet-4-20250514",
+                temperature=0,
+                max_tokens=1500,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            raw = response.content[0].text
+            return _parse_clusters(raw)
+        except Exception:
+            continue
+    raise RuntimeError("Anthropic failed to return valid clusters")

@@ -44,7 +44,7 @@ def _build_user_message(
 
 
 def _provider_timeout_seconds() -> int:
-    return int(os.getenv("AI_PROVIDER_TIMEOUT_SECONDS", "25"))
+    return int(os.getenv("AI_PROVIDER_TIMEOUT_SECONDS", "45"))
 
 
 async def _call_claude(
@@ -116,15 +116,29 @@ async def _invoke_claude(
     correction: Optional[str] = None,
 ) -> AiRecommendation:
     client = AsyncAnthropic(api_key=claude_key)
-    raw = await _call_claude(client, payload, correction)
-    parsed = gate1_parse(raw, retry_count)
-    rec = gate2_schema(parsed)
-    violations = gate3_business_rules(payload, rec)
-    rec = apply_business_rule_violations(rec, violations)
-    rec.model_used = "claude-sonnet-4-20250514"
-    rec.source = "ai_claude_sonnet"
-    rec.generated_at = datetime.now(timezone.utc).isoformat()
-    return rec
+    for _ in range(3):
+        try:
+            raw = await _call_claude(client, payload, correction)
+            parsed = gate1_parse(raw, retry_count)
+            rec = gate2_schema(parsed)
+            violations = gate3_business_rules(payload, rec)
+            rec = apply_business_rule_violations(rec, violations)
+            rec.model_used = "claude-sonnet-4-20250514"
+            rec.source = "ai_claude_sonnet"
+            rec.generated_at = datetime.now(timezone.utc).isoformat()
+            return rec
+        except RetryWithCorrectionError as exc:
+            correction = exc.message
+            retry_count += 1
+        except Exception as exc:
+            if "credit balance is too low" in str(exc).lower():
+                raise
+            correction = (
+                "The previous attempt failed before producing a valid "
+                "recommendation. Return ONLY valid JSON matching the schema."
+            )
+            retry_count += 1
+    raise RuntimeError("Anthropic failed to return a valid recommendation")
 
 
 async def _invoke_gpt(
@@ -134,15 +148,27 @@ async def _invoke_gpt(
     correction: Optional[str] = None,
 ) -> AiRecommendation:
     client = AsyncOpenAI(api_key=openai_key)
-    raw = await _call_gpt4o(client, payload, correction)
-    parsed = gate1_parse(raw, retry_count)
-    rec = gate2_schema(parsed)
-    violations = gate3_business_rules(payload, rec)
-    rec = apply_business_rule_violations(rec, violations)
-    rec.model_used = "gpt-4o"
-    rec.source = "ai_gpt4o_fallback"
-    rec.generated_at = datetime.now(timezone.utc).isoformat()
-    return rec
+    for _ in range(3):
+        try:
+            raw = await _call_gpt4o(client, payload, correction)
+            parsed = gate1_parse(raw, retry_count)
+            rec = gate2_schema(parsed)
+            violations = gate3_business_rules(payload, rec)
+            rec = apply_business_rule_violations(rec, violations)
+            rec.model_used = "gpt-4o"
+            rec.source = "ai_gpt4o_fallback"
+            rec.generated_at = datetime.now(timezone.utc).isoformat()
+            return rec
+        except RetryWithCorrectionError as exc:
+            correction = exc.message
+            retry_count += 1
+        except Exception as exc:
+            correction = (
+                "The previous attempt failed before producing a valid "
+                "recommendation. Return ONLY valid JSON matching the schema."
+            )
+            retry_count += 1
+    raise RuntimeError("OpenAI failed to return a valid recommendation")
 
 
 async def _invoke_grok(
@@ -155,15 +181,27 @@ async def _invoke_grok(
         api_key=xai_key,
         base_url=os.getenv("XAI_BASE_URL", "https://api.x.ai/v1"),
     )
-    raw = await _call_grok(client, payload, correction)
-    parsed = gate1_parse(raw, retry_count)
-    rec = gate2_schema(parsed)
-    violations = gate3_business_rules(payload, rec)
-    rec = apply_business_rule_violations(rec, violations)
-    rec.model_used = os.getenv("XAI_MODEL", "grok-2-latest")
-    rec.source = "ai_grok_fallback"
-    rec.generated_at = datetime.now(timezone.utc).isoformat()
-    return rec
+    for _ in range(3):
+        try:
+            raw = await _call_grok(client, payload, correction)
+            parsed = gate1_parse(raw, retry_count)
+            rec = gate2_schema(parsed)
+            violations = gate3_business_rules(payload, rec)
+            rec = apply_business_rule_violations(rec, violations)
+            rec.model_used = os.getenv("XAI_MODEL", "grok-2-latest")
+            rec.source = "ai_grok_fallback"
+            rec.generated_at = datetime.now(timezone.utc).isoformat()
+            return rec
+        except RetryWithCorrectionError as exc:
+            correction = exc.message
+            retry_count += 1
+        except Exception:
+            correction = (
+                "The previous attempt failed before producing a valid "
+                "recommendation. Return ONLY valid JSON matching the schema."
+            )
+            retry_count += 1
+    raise RuntimeError("Grok failed to return a valid recommendation")
 
 
 async def _run_single(
