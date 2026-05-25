@@ -103,7 +103,6 @@ async def _call_gpt4o(
         model="gpt-4o",
         temperature=0,
         max_tokens=600,
-        response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": _read_prompt()},
             {
@@ -112,6 +111,7 @@ async def _call_gpt4o(
             },
         ],
     )
+    # return raw text content for downstream parsing/salvage
     return response.choices[0].message.content or ""
 
 
@@ -124,7 +124,6 @@ async def _call_grok(
         model=os.getenv("XAI_MODEL", "grok-2-latest"),
         temperature=0,
         max_tokens=600,
-        response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": _read_prompt()},
             {
