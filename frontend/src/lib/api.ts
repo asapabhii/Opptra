@@ -26,7 +26,12 @@ export async function runQueue() {
 
 export async function getRunStatus(runId: string) {
   const res = await fetch(`${API_BASE}/api/queue/runs/${runId}/status`);
-  if (!res.ok) throw new Error('Failed to fetch run status');
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const error = new Error(text || 'Failed to fetch run status') as Error & { status?: number };
+    error.status = res.status;
+    throw error;
+  }
   return res.json();
 }
 

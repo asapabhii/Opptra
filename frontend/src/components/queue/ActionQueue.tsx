@@ -108,6 +108,15 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
           }
         } catch (error) {
           console.error('Failed to poll run status:', error);
+          // If the run ID is not found (404), stop polling and refresh latest run
+          const status = (error as any)?.status;
+          if (status === 404) {
+            window.clearInterval(interval);
+            await refreshLatestRun();
+            setRunError('Queue run not found on this server. Possible multi-instance DB mismatch.');
+            setLoading(false);
+            setBootstrapping(false);
+          }
         }
       }, 2000);
     } catch (err) {

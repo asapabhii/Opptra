@@ -20,6 +20,9 @@ from services.validation import (
     gate3_business_rules,
 )
 
+# runtime flags to skip providers for the current run if a permanent provider error is detected
+PROVIDER_SKIP: dict[str, bool] = {"anthropic": False, "openai": False, "xai": False}
+
 PROMPT_PATH = (
     Path(__file__).resolve().parents[1]
     / "prompts"
@@ -216,35 +219,53 @@ async def _run_single(
     errors: list[str] = []
     timeout = _provider_timeout_seconds()
 
-    if claude_key:
-        try:
-            return await asyncio.wait_for(
-                _invoke_claude(payload, claude_key, retry_count, correction),
-                timeout=timeout,
-            )
-        except Exception as exc:
-            errors.append(f"anthropic: {exc}")
-            logging.exception("Anthropic provider error for SKU %s: %s", payload.get("sku_id"), exc)
-
+    # Try OpenAI first (preferred), then Anthropic, then Grok
     if openai_key:
-        try:
-            return await asyncio.wait_for(
-                _invoke_gpt(payload, openai_key, retry_count, correction),
-                timeout=timeout,
-            )
-        except Exception as exc:
-            errors.append(f"openai: {exc}")
-            logging.exception("OpenAI provider error for SKU %s: %s", payload.get("sku_id"), exc)
+        if PROVIDER_SKIP.get("openai"):
+            logging.info("Skipping OpenAI provider for SKU %s due to prior permanent error", payload.get("sku_id"))
+        else:
+            try:
+                return await asyncio.wait_for(
+                    _invoke_gpt(payload, openai_key, retry_count, correction),
+                    timeout=timeout,
+                )
+            except Exception as exc:
+                errors.append(f"openai: {exc}")
+                logging.exception("OpenAI provider error for SKU %s: %s", payload.get("sku_id"), exc)
+                # If OpenAI returns authentication or permanent errors, consider skipping it
+                if "invalid_api_key" in str(exc).lower() or "invalid_request_error" in str(exc).lower():
+                    PROVIDER_SKIP["openai"] = True
+
+    if claude_key:
+        if PROVIDER_SKIP.get("anthropic"):
+            logging.info("Skipping Anthropic provider for SKU %s due to prior permanent error", payload.get("sku_id"))
+        else:
+            try:
+                return await asyncio.wait_for(
+                    _invoke_claude(payload, claude_key, retry_count, correction),
+                    timeout=timeout,
+                )
+            except Exception as exc:
+                errors.append(f"anthropic: {exc}")
+                logging.exception("Anthropic provider error for SKU %s: %s", payload.get("sku_id"), exc)
+                # If Anthropic reports low credit balance, skip Anthropic for remaining SKUs in this run
+                if "credit balance is too low" in str(exc).lower():
+                    PROVIDER_SKIP["anthropic"] = True
 
     if xai_key:
-        try:
-            return await asyncio.wait_for(
-                _invoke_grok(payload, xai_key, retry_count, correction),
-                timeout=timeout,
-            )
-        except Exception as exc:
-            errors.append(f"grok: {exc}")
-            logging.exception("Grok provider error for SKU %s: %s", payload.get("sku_id"), exc)
+        if PROVIDER_SKIP.get("xai"):
+            logging.info("Skipping XAI provider for SKU %s due to prior permanent error", payload.get("sku_id"))
+        else:
+            try:
+                return await asyncio.wait_for(
+                    _invoke_grok(payload, xai_key, retry_count, correction),
+                    timeout=timeout,
+                )
+            except Exception as exc:
+                errors.append(f"grok: {exc}")
+                logging.exception("Grok provider error for SKU %s: %s", payload.get("sku_id"), exc)
+                if "invalid_api_key" in str(exc).lower() or "invalid_request_error" in str(exc).lower():
+                    PROVIDER_SKIP["xai"] = True
 
     raise RuntimeError("No live AI provider succeeded for this SKU: " + " | ".join(errors))
 
@@ -260,6 +281,11 @@ async def run_parallel(
     progress_hook: Optional[Callable[[dict, AiRecommendation], None]] = None,
 ) -> List[AiRecommendation | None]:
     semaphore = asyncio.Semaphore(max_concurrency)
+
+    # reset provider skip flags at the start of this run
+    PROVIDER_SKIP["anthropic"] = False
+    PROVIDER_SKIP["openai"] = False
+    PROVIDER_SKIP["xai"] = False
 
     async def _guarded(payload: dict) -> AiRecommendation | None:
         async with semaphore:
