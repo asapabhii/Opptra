@@ -24,6 +24,7 @@ export default function DecisionBar({
       <div className="text-xs text-text-muted">Ready to decide?</div>
       <div className="mt-2 flex flex-wrap gap-3">
         <button
+          type="button"
           onClick={onApprove}
           disabled={disabled}
           className="rounded-md bg-accent-blue px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-text-muted"
@@ -32,6 +33,7 @@ export default function DecisionBar({
         </button>
         <div className="relative">
           <button
+            type="button"
             onClick={() => setSnoozeOpen((prev) => !prev)}
             disabled={disabled}
             className="rounded-md border border-bg-elevated px-4 py-2 text-xs font-semibold text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
@@ -40,12 +42,13 @@ export default function DecisionBar({
           </button>
           {snoozeOpen && (
             <div className="absolute left-0 z-10 mt-2 w-36 rounded-md bg-bg-elevated p-2 text-xs shadow-soft">
-              <button onClick={() => onSnooze(6)} className="block w-full rounded px-2 py-1 text-left hover:bg-bg-card">Snooze 6h</button>
-              <button onClick={() => onSnooze(24)} className="block w-full rounded px-2 py-1 text-left hover:bg-bg-card">Snooze 24h</button>
+              <button type="button" onClick={() => { setSnoozeOpen(false); onSnooze(6); }} className="block w-full rounded px-2 py-1 text-left hover:bg-bg-card">Snooze 6h</button>
+              <button type="button" onClick={() => { setSnoozeOpen(false); onSnooze(24); }} className="block w-full rounded px-2 py-1 text-left hover:bg-bg-card">Snooze 24h</button>
             </div>
           )}
         </div>
         <button
+          type="button"
           onClick={onOverride}
           disabled={disabled}
           className="rounded-md border border-bg-elevated px-4 py-2 text-xs font-semibold text-text-primary disabled:cursor-not-allowed disabled:opacity-60"

@@ -24,11 +24,9 @@ export default function ClusterCard({
   const handleApproveAll = async () => {
     setIsProcessing(true);
     try {
-      // Approve each pending recommendation in the cluster
-      const pendingRecs = recommendations.filter(rec => rec.status === 'pending');
-      
-      await Promise.all(
-        pendingRecs.map(rec =>
+      const pendingRecs = recommendations.filter((rec) => rec.status === 'pending');
+      const results = await Promise.allSettled(
+        pendingRecs.map((rec) =>
           postDecision({
             recommendation_id: rec.id,
             sku_id: rec.sku_id,
@@ -37,6 +35,10 @@ export default function ClusterCard({
         )
       );
 
+      const failed = results.filter((result) => result.status === 'rejected');
+      if (failed.length > 0) {
+        console.warn(`Approve all completed with ${failed.length} rejected updates.`);
+      }
       await onDecisionApplied();
     } catch (error) {
       console.error('Failed to approve all:', error);
@@ -49,11 +51,9 @@ export default function ClusterCard({
   const handleSnoozeAll = async () => {
     setIsProcessing(true);
     try {
-      // Snooze each pending recommendation for 24 hours
-      const pendingRecs = recommendations.filter(rec => rec.status === 'pending');
-      
-      await Promise.all(
-        pendingRecs.map(rec =>
+      const pendingRecs = recommendations.filter((rec) => rec.status === 'pending');
+      const results = await Promise.allSettled(
+        pendingRecs.map((rec) =>
           postDecision({
             recommendation_id: rec.id,
             sku_id: rec.sku_id,
@@ -63,6 +63,10 @@ export default function ClusterCard({
         )
       );
 
+      const failed = results.filter((result) => result.status === 'rejected');
+      if (failed.length > 0) {
+        console.warn(`Snooze all completed with ${failed.length} rejected updates.`);
+      }
       await onDecisionApplied();
     } catch (error) {
       console.error('Failed to snooze all:', error);
@@ -94,6 +98,7 @@ export default function ClusterCard({
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
         <button 
+          type="button"
           className="rounded-md bg-accent-blue px-4 py-2 text-xs font-semibold text-white disabled:bg-bg-elevated disabled:text-text-muted"
           onClick={handleApproveAll}
           disabled={isProcessing || !recommendations.some(r => r.status === 'pending')}
@@ -101,12 +106,14 @@ export default function ClusterCard({
           {isProcessing ? 'Processing...' : 'Approve All'}
         </button>
         <button 
+          type="button"
           className="rounded-md border border-bg-elevated px-4 py-2 text-xs font-semibold text-text-primary"
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? 'Hide SKUs' : 'Review SKUs'}
         </button>
         <button 
+          type="button"
           className="rounded-md border border-bg-elevated px-4 py-2 text-xs font-semibold text-text-primary disabled:bg-bg-elevated disabled:text-text-muted"
           onClick={handleSnoozeAll}
           disabled={isProcessing || !recommendations.some(r => r.status === 'pending')}

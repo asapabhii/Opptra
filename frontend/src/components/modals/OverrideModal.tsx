@@ -29,13 +29,29 @@ export default function OverrideModal({
   const [price, setPrice] = useState(recommendation.recommended_price);
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const marginFloor = recommendation.margin_floor;
   const marginAtPrice = price - marginFloor;
   const marginPct = price > 0 ? (marginAtPrice / price) * 100 : 0;
 
+  const handleSubmit = async () => {
+    if (!reason || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit({ human_price: price, reason_category: reason, notes });
+    } catch (err) {
+      console.error('Failed to submit override:', err);
+      setError('Override submission failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-2xl rounded-xl bg-bg-card p-6">
+      <div className="w-full max-w-2xl rounded-xl bg-bg-card p-6 shadow-soft">
         <div className="text-lg font-semibold text-text-primary">Override Recommendation</div>
         <div className="mt-2 text-xs text-text-muted">
           AI recommended: {recommendation.action_type.replace('_', ' ')} to {formatInr(recommendation.recommended_price)}
@@ -82,15 +98,18 @@ export default function OverrideModal({
             className="mt-1 h-20 w-full rounded-md bg-bg-elevated p-2 text-sm text-text-primary"
           />
         </div>
+        {error && <div className="mt-3 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning">{error}</div>}
         <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onClose} className="rounded-md border border-bg-elevated px-4 py-2 text-xs">
+          <button type="button" onClick={onClose} className="rounded-md border border-bg-elevated px-4 py-2 text-xs">
             Cancel
           </button>
           <button
-            onClick={() => reason && onSubmit({ human_price: price, reason_category: reason, notes })}
-            className="rounded-md bg-accent-blue px-4 py-2 text-xs font-semibold text-white"
+            type="button"
+            onClick={handleSubmit}
+            disabled={!reason || submitting}
+            className="rounded-md bg-accent-blue px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-text-muted"
           >
-            Submit Override
+            {submitting ? 'Submitting...' : 'Submit Override'}
           </button>
         </div>
       </div>

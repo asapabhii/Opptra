@@ -61,12 +61,14 @@ export default function QueueControls({
           {lastAnalysed ? `Last analysed: ${new Date(lastAnalysed).toLocaleTimeString()}` : 'Not analysed yet'}
         </span>
         <button
+          type="button"
           onClick={onRefresh}
           className="rounded-md border border-bg-elevated px-4 py-2 text-sm font-semibold text-text-primary"
         >
           Refresh Queue
         </button>
         <button
+          type="button"
           onClick={onRun}
           disabled={loading}
           className="rounded-md bg-accent-blue px-4 py-2 text-sm font-semibold text-white"

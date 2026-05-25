@@ -17,6 +17,8 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
   const [status, setStatus] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState<QueueFilterKey>('all');
   const [loading, setLoading] = useState(false);
+  const [autoRunPending, setAutoRunPending] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(false);
 
   const refreshLatestRun = async () => {
     try {
@@ -30,8 +32,45 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
   };
 
   useEffect(() => {
-    refreshLatestRun();
+    let cancelled = false;
+
+    const initializeQueue = async () => {
+      try {
+        const latest = await getLatestRun();
+        if (cancelled) return;
+
+        setRun(latest.run);
+
+        if (latest.run?.id === 'seed-run-001' && !window.sessionStorage.getItem('opptra:auto-run-once')) {
+          window.sessionStorage.setItem('opptra:auto-run-once', 'true');
+          setBootstrapping(true);
+          setClusters([]);
+          setRecommendations([]);
+          setStatus({ status: 'running', skus_processed: 0, total_skus: 0, run_id: 'seed-bootstrap' });
+          setAutoRunPending(true);
+          return;
+        }
+
+        setBootstrapping(false);
+        setClusters(latest.clusters ?? []);
+        setRecommendations(latest.recommendations ?? []);
+      } catch (error) {
+        console.error('Failed to initialize queue state:', error);
+      }
+    };
+
+    initializeQueue();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (!autoRunPending) return;
+    setAutoRunPending(false);
+    void handleRun();
+  }, [autoRunPending]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -60,6 +99,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
             window.clearInterval(interval);
             await refreshLatestRun();
             setLoading(false);
+              setBootstrapping(false);
           }
         } catch (error) {
           console.error('Failed to poll run status:', error);
@@ -68,6 +108,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
     } catch (err) {
       console.error(err);
       setLoading(false);
+      setBootstrapping(false);
     }
   };
 
@@ -108,6 +149,11 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
 
   return (
     <section className="px-8 py-6">
+      {bootstrapping && (
+        <div className="mb-4 rounded-xl border border-accent-blue/30 bg-accent-blue/10 px-4 py-3 text-sm text-text-primary">
+          Launching live AI analysis now so you do not see the seeded fallback run.
+        </div>
+      )}
       <QueueControls
         run={run}
         status={status}
@@ -130,7 +176,7 @@ export default function ActionQueue({ onSkuClick }: ActionQueueProps) {
           />
         ))}
 
-        {!clusters.length && (
+        {!clusters.length && !bootstrapping && (
           <div className="rounded-xl border border-bg-elevated bg-bg-card p-8 text-center text-text-muted">
             No analysis has been run yet. Click "Run AI Analysis" to begin.
           </div>

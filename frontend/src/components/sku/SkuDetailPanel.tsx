@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getSkuDetail, postDecision } from '../../lib/api';
-import { formatInr, formatPercent } from '../../lib/formatters';
 import { SkuDetail } from '../../types';
 import StatePanel from './StatePanel';
 import CompetitorPanel from './CompetitorPanel';
@@ -28,12 +28,18 @@ export default function SkuDetailPanel({
   const [loading, setLoading] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !skuId) return;
     setLoading(true);
+    setErrorMessage(null);
     getSkuDetail(skuId)
       .then((data) => setDetail(data))
+      .catch((error) => {
+        console.error('Failed to load SKU detail:', error);
+        setErrorMessage('Unable to load this SKU right now. Please try again.');
+      })
       .finally(() => setLoading(false));
   }, [open, skuId]);
 
@@ -44,9 +50,17 @@ export default function SkuDetailPanel({
   return (
     <div className="fixed inset-0 z-30 flex">
       <div className="flex-1 bg-black/50" onClick={onClose} />
-      <aside className="h-full w-full max-w-xl overflow-y-auto bg-bg-elevated p-6 text-text-primary shadow-soft">
-        <button onClick={onClose} className="mb-4 text-xs text-text-muted">Close</button>
+      <aside className="h-full w-full max-w-xl overflow-y-auto bg-bg-elevated p-4 text-text-primary shadow-soft lg:p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <Link href="/" onClick={onClose} className="rounded-md border border-bg-elevated px-3 py-2 text-xs font-semibold text-text-primary">
+            Back to Queue
+          </Link>
+          <button type="button" onClick={onClose} className="text-xs text-text-muted">
+            Close
+          </button>
+        </div>
         {loading && <div className="h-6 w-32 animate-pulse rounded bg-bg-card" />}
+        {errorMessage && <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning">{errorMessage}</div>}
         {!loading && detail && (
           <div className="space-y-5">
             <StatePanel detail={detail} />
@@ -63,6 +77,7 @@ export default function SkuDetailPanel({
             disabled={submitting}
             onApprove={async () => {
               setSubmitting(true);
+              setErrorMessage(null);
               try {
                 await postDecision({
                   sku_id: recommendation.sku_id,
@@ -71,12 +86,17 @@ export default function SkuDetailPanel({
                 });
                 await onDecisionApplied?.();
                 onClose();
+              } catch (error: any) {
+                console.error('Failed to approve recommendation:', error);
+                setErrorMessage(error?.status === 409 ? 'This recommendation was already decided. Refreshing now.' : 'Approve failed. Please try again.');
+                await onDecisionApplied?.();
               } finally {
                 setSubmitting(false);
               }
             }}
             onSnooze={async (hours) => {
               setSubmitting(true);
+              setErrorMessage(null);
               try {
                 await postDecision({
                   sku_id: recommendation.sku_id,
@@ -86,6 +106,10 @@ export default function SkuDetailPanel({
                 });
                 await onDecisionApplied?.();
                 onClose();
+              } catch (error: any) {
+                console.error('Failed to snooze recommendation:', error);
+                setErrorMessage(error?.status === 409 ? 'This recommendation was already decided. Refreshing now.' : 'Snooze failed. Please try again.');
+                await onDecisionApplied?.();
               } finally {
                 setSubmitting(false);
               }
@@ -101,6 +125,7 @@ export default function SkuDetailPanel({
           onClose={() => setShowOverride(false)}
           onSubmit={async (payload) => {
             setSubmitting(true);
+            setErrorMessage(null);
             try {
               await postDecision({
                 sku_id: recommendation.sku_id,
@@ -115,6 +140,10 @@ export default function SkuDetailPanel({
               await onDecisionApplied?.();
               setShowOverride(false);
               onClose();
+            } catch (error: any) {
+              console.error('Failed to override recommendation:', error);
+              setErrorMessage(error?.status === 409 ? 'This recommendation was already decided. Refreshing now.' : 'Override failed. Please try again.');
+              await onDecisionApplied?.();
             } finally {
               setSubmitting(false);
             }

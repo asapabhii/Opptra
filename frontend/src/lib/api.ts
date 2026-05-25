@@ -42,7 +42,12 @@ export async function postDecision(payload: any) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error('Failed to post decision');
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const error = new Error(text || 'Failed to post decision') as Error & { status?: number };
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   emitAppStateChanged({ type: 'decision-posted', skuId: payload?.sku_id });
   return data;
