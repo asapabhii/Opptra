@@ -4,6 +4,8 @@ import os
 import uuid
 from datetime import datetime, timezone
 
+import logging
+
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from api.dependencies import get_db
@@ -111,6 +113,22 @@ async def _process_queue_run(run_id: str) -> None:
         )
         skus = get_skus()
         fee_config = get_fee_config()
+
+        # validate provider configuration early so runs fail fast with a clear error
+        claude_key = os.getenv("ANTHROPIC_API_KEY")
+        openai_key = os.getenv("OPENAI_API_KEY")
+        xai_key = os.getenv("XAI_API_KEY")
+        if not (claude_key or openai_key or xai_key):
+            async with await get_db() as db:
+                await update_queue_run_failed(db, run_id)
+                await db.commit()
+            if run_id in RUN_PROGRESS:
+                RUN_PROGRESS[run_id]["status"] = "failed"
+                RUN_PROGRESS[run_id]["error"] = (
+                    "No AI provider API keys are configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY."
+                )
+            return
+
         competitors_by_sku = {sku["sku_id"]: get_competitor_by_sku(sku["sku_id"]) for sku in skus}
         signals_by_sku = {
             sku["sku_id"]: compute_all_signals(sku, competitors_by_sku.get(sku["sku_id"]), fee_config)
@@ -151,9 +169,9 @@ async def _process_queue_run(run_id: str) -> None:
 
         recommendations = await run_parallel(
             [payload.model_dump() for payload in payloads],
-            os.getenv("ANTHROPIC_API_KEY"),
-            os.getenv("OPENAI_API_KEY"),
-            os.getenv("XAI_API_KEY"),
+            claude_key,
+            openai_key,
+            xai_key,
             start_hook=start_hook,
             progress_hook=progress_hook,
         )
@@ -186,9 +204,9 @@ async def _process_queue_run(run_id: str) -> None:
 
         clusters = await form_clusters(
             enriched_recommendations,
-            os.getenv("ANTHROPIC_API_KEY"),
-            os.getenv("OPENAI_API_KEY"),
-            os.getenv("XAI_API_KEY"),
+            claude_key,
+            openai_key,
+            xai_key,
         )
         impact_by_sku = {rec["sku_id"]: rec["impact_score"] for rec in enriched_recommendations}
         for cluster in clusters:

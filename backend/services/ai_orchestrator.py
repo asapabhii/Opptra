@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, List, Optional
+import logging
 
 from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
@@ -223,6 +224,7 @@ async def _run_single(
             )
         except Exception as exc:
             errors.append(f"anthropic: {exc}")
+            logging.exception("Anthropic provider error for SKU %s: %s", payload.get("sku_id"), exc)
 
     if openai_key:
         try:
@@ -232,6 +234,7 @@ async def _run_single(
             )
         except Exception as exc:
             errors.append(f"openai: {exc}")
+            logging.exception("OpenAI provider error for SKU %s: %s", payload.get("sku_id"), exc)
 
     if xai_key:
         try:
@@ -241,6 +244,7 @@ async def _run_single(
             )
         except Exception as exc:
             errors.append(f"grok: {exc}")
+            logging.exception("Grok provider error for SKU %s: %s", payload.get("sku_id"), exc)
 
     raise RuntimeError("No live AI provider succeeded for this SKU: " + " | ".join(errors))
 
@@ -267,8 +271,10 @@ async def run_parallel(
                     timeout=timeout_seconds,
                 )
             except asyncio.TimeoutError:
+                logging.exception("Live AI request timed out for SKU %s", payload.get("sku_id"))
                 return None
             except Exception:
+                logging.exception("Live AI request failed for SKU %s", payload.get("sku_id"))
                 return None
             if progress_hook:
                 progress_hook(payload, rec)
