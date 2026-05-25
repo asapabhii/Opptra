@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 export const APP_STATE_CHANGED_EVENT = 'opptra:state-changed';
 
 export function emitAppStateChanged(detail?: Record<string, unknown>) {
